@@ -1,0 +1,30 @@
+{
+	"compilerOptions": {
+		"incremental": true,
+		"target": "es2022",
+		"module": "node16",
+		"lib": ["dom", "es2022"],
+		"jsx": "react-jsx",
+		"strict": true,
+		"sourceMap": true,
+		"baseUrl": ".",
+		"paths": {
+			"@/*": ["src/*"]
+		},
+		"moduleResolution": "node16",
+		"esModuleInterop": true,
+		"allowSyntheticDefaultImports": true,
+		"resolveJsonModule": true,
+		"allowJs": true,
+		"outDir": "dist"
+	},
+	"include": ["src/**/*", "*.ts", "*.js", "assets/**/*.d.ts"],
+	"exclude": [
+		"node_modules",
+		"test",
+		"release/build",
+		"release/app/dist",
+		"dist",
+		"dist-electron"
+	]
+}
