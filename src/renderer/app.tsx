@@ -110,6 +110,17 @@ function Browser() {
 		setCurrentView(view);
 	}, []);
 
+	const handleAddTab = useCallback(() => {
+		addTab({
+			url: "about:blank",
+			title: "New Tab",
+			isLoading: false,
+			canGoBack: false,
+			canGoForward: false,
+			webviewKey: Date.now(),
+		});
+	}, [addTab]);
+
 	const activeTab = tabs.find((tab) => tab.id === activeTabId);
 
 	// Keep currentUrl in sync with active tab's URL
@@ -145,6 +156,7 @@ function Browser() {
 				onNavigate={handleNavigationClick}
 				onThemeChange={cycleTheme}
 				onViewChange={handleViewChange}
+				onAddTab={handleAddTab}
 			/>
 
 			<div className="flex-1 flex overflow-hidden">

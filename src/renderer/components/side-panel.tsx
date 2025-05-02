@@ -59,7 +59,7 @@ export function SidePanel({
 				"border-border",
 			)}
 		>
-			<div className="p-4">{children}</div>
+			<div className="p-2">{children}</div>
 			<div
 				ref={handleRef}
 				onPointerDown={startResize}

@@ -4,6 +4,8 @@ import { NavigationControls } from "./navigation-controls";
 import SettingsMenu from "./settings-menu";
 import { StreamsTabTrigger } from "./streams-tab-trigger";
 import { URLBar } from "./url-bar";
+import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 type Theme = "system" | "light" | "dark";
 
@@ -20,6 +22,7 @@ interface TitleBarProps {
 	onNavigate: (action: "back" | "forward" | "refresh" | "stop") => void;
 	onThemeChange: () => void;
 	onViewChange: (view: "webview" | "settings") => void;
+	onAddTab: () => void;
 }
 
 export function TitleBar({
@@ -35,6 +38,7 @@ export function TitleBar({
 	onNavigate,
 	onThemeChange,
 	onViewChange,
+	onAddTab,
 }: TitleBarProps) {
 	return (
 		<div
@@ -58,6 +62,15 @@ export function TitleBar({
 				onChange={onUrlChange}
 				onSubmit={onUrlSubmit}
 			/>
+			<Button
+				variant="ghost"
+				size="icon"
+				className="h-7 w-7 p-1 rounded-full non-draggable"
+				onClick={onAddTab}
+				aria-label="New Tab"
+			>
+				<Plus className="h-4 w-4" />
+			</Button>
 			<div className="w-8" />
 			<AITabTrigger />
 			<SettingsMenu onViewChange={onViewChange} onUrlChange={onUrlChange} />
