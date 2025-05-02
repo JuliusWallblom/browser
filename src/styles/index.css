@@ -30,7 +30,17 @@
 		--chart-3: 197 37% 24%;
 		--chart-4: 43 74% 66%;
 		--chart-5: 27 87% 67%;
-		--radius: 0.5rem;
+
+		/* Border radius values */
+		--radius-none: 0;
+		--radius-sm: 0.125rem;
+		--radius-base: 0.25rem;
+		--radius-md: 0.375rem;
+		--radius-lg: 0.5rem;
+		--radius-xl: 0.75rem;
+		--radius-2xl: 1rem;
+		--radius-3xl: 1.5rem;
+		--radius-full: 9999px;
 	}
 
 	.dark {
@@ -69,5 +79,32 @@
 	}
 	body {
 		@apply bg-background text-foreground;
+	}
+}
+
+@layer components {
+	.rounded-sm {
+		border-radius: 2px !important;
+	}
+	.rounded {
+		border-radius: 4px !important;
+	}
+	.rounded-md {
+		border-radius: 6px !important;
+	}
+	.rounded-lg {
+		border-radius: 8px !important;
+	}
+	.rounded-xl {
+		border-radius: 12px !important;
+	}
+	.rounded-2xl {
+		border-radius: 16px !important;
+	}
+	.rounded-3xl {
+		border-radius: 24px !important;
+	}
+	.rounded-full {
+		border-radius: 9999px !important;
 	}
 }

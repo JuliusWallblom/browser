@@ -15,7 +15,7 @@ type GetState = StoreApi<PanelState>["getState"];
 type Store = StoreApi<PanelState>;
 
 export const usePanels = create<PanelState>()(
-	(set: SetState, get: GetState, store: Store) => ({
+	(set: SetState, _get: GetState, _store: Store) => ({
 		isLeftPanelOpen: false,
 		isRightPanelOpen: false,
 		toggleLeftPanel: () =>

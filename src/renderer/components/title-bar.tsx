@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { AITabTrigger } from "./ai-tab-trigger";
 import { NavigationControls } from "./navigation-controls";
+import SettingsMenu from "./settings-menu";
 import { StreamsTabTrigger } from "./streams-tab-trigger";
 import { URLBar } from "./url-bar";
 
@@ -18,6 +19,7 @@ interface TitleBarProps {
 	onUrlSubmit: (e: React.FormEvent) => void;
 	onNavigate: (action: "back" | "forward" | "refresh" | "stop") => void;
 	onThemeChange: () => void;
+	onViewChange: (view: "webview" | "settings") => void;
 }
 
 export function TitleBar({
@@ -32,6 +34,7 @@ export function TitleBar({
 	onUrlSubmit,
 	onNavigate,
 	onThemeChange,
+	onViewChange,
 }: TitleBarProps) {
 	return (
 		<div
@@ -57,6 +60,7 @@ export function TitleBar({
 			/>
 			<div className="w-8" />
 			<AITabTrigger />
+			<SettingsMenu onViewChange={onViewChange} onUrlChange={onUrlChange} />
 		</div>
 	);
 }

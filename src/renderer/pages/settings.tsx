@@ -1,18 +1,37 @@
 import { useTheme } from "@/hooks/use-theme";
 import { Moon, Sun } from "lucide-react";
-import { Monitor } from "lucide-react";
+import { Monitor, ArrowLeft } from "lucide-react";
 import React from "react";
+import { Button } from "@/components/ui/button";
 
-export function SettingsPage() {
+interface SettingsPageProps {
+	onViewChange: (view: "webview" | "settings") => void;
+	onUrlChange: (url: string) => void;
+}
+
+export function SettingsPage({ onViewChange, onUrlChange }: SettingsPageProps) {
 	const { theme, cycleTheme } = useTheme();
 	const themeIcon = {
 		system: <Monitor size={16} />,
 		light: <Sun size={16} />,
 		dark: <Moon size={16} />,
 	}[theme];
+
 	return (
 		<div className="flex flex-col p-8 bg-background-primary text-primary min-h-screen">
-			<h1 className="text-3xl font-bold mb-6">Merlin Settings</h1>
+			<div className="flex items-center gap-4 mb-6">
+				<Button
+					variant="ghost"
+					size="icon"
+					onClick={() => {
+						onViewChange("webview");
+						onUrlChange("about:blank");
+					}}
+				>
+					<ArrowLeft className="h-4 w-4" />
+				</Button>
+				<h1 className="text-3xl font-bold">Merlin Settings</h1>
+			</div>
 
 			<div className="space-y-6">
 				<section className="space-y-4">

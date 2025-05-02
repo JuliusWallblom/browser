@@ -25,13 +25,69 @@ export function URLBar({
 	const [isEditing, setIsEditing] = useState(false);
 	const [isFocused, setIsFocused] = useState(false);
 	const [inputValue, setInputValue] = useState(url);
+	const [isFaviconLoading, setIsFaviconLoading] = useState(false);
 
 	// Update input value when URL changes and we're not editing
 	useEffect(() => {
-		if (!isEditing) {
-			setInputValue(url);
+		if (!isEditing && url !== inputValue) {
+			try {
+				// Handle special URLs like merlin:// or about:blank
+				if (
+					url.startsWith("merlin://") ||
+					url === "about:blank" ||
+					inputValue.startsWith("merlin://")
+				) {
+					if (url !== inputValue) {
+						setInputValue(url);
+					}
+					return;
+				}
+
+				// Try to parse both URLs, adding http:// if needed
+				const parseUrl = (urlString: string) => {
+					try {
+						if (!urlString.includes("://")) {
+							return new URL(`http://${urlString}`);
+						}
+						return new URL(urlString);
+					} catch {
+						// Return null if URL is invalid
+						return null;
+					}
+				};
+
+				const currentUrl = parseUrl(inputValue);
+				const newUrl = parseUrl(url);
+
+				// Update if either URL is invalid or if they're different
+				if (
+					!currentUrl ||
+					!newUrl ||
+					currentUrl.hostname !== newUrl.hostname ||
+					currentUrl.pathname !== newUrl.pathname
+				) {
+					setInputValue(url);
+				}
+			} catch (error) {
+				// Fallback: just update the value if there's any error
+				console.debug("Error comparing URLs:", error);
+				setInputValue(url);
+			}
 		}
-	}, [url, isEditing]);
+	}, [url, isEditing, inputValue]);
+
+	// Handle favicon loading
+	useEffect(() => {
+		if (favicon) {
+			setIsFaviconLoading(true);
+			const img = new Image();
+			img.onload = () => setIsFaviconLoading(false);
+			img.onerror = () => setIsFaviconLoading(false);
+			img.src = favicon;
+		} else {
+			setIsFaviconLoading(false);
+		}
+	}, [favicon]);
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
@@ -71,7 +127,7 @@ export function URLBar({
 	};
 
 	const getIcon = () => {
-		if (isLoading) {
+		if (isLoading || isFaviconLoading) {
 			return (
 				<Loader2 className={cn("w-4 h-4 text-muted-foreground animate-spin")} />
 			);
@@ -110,7 +166,7 @@ export function URLBar({
 					onFocus={handleFocus}
 					onBlur={handleBlur}
 					onMouseDown={handleMouseDown}
-					className="w-full h-full pl-7 pr-2 rounded-full text-sm bg-muted border border-transparent focus:border-gray-400 outline-none focus:outline-none focus:ring-0"
+					className="w-full h-full pl-7 pr-2 rounded-full text-sm bg-muted border-none"
 					placeholder="Search or enter URL"
 				/>
 			</div>

@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, ArrowRight, ListTree, RotateCcw, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, RotateCcw, X } from "lucide-react";
 
 interface NavigationControlsProps {
 	onNavigate: (action: "back" | "forward" | "refresh" | "stop") => void;
@@ -18,12 +18,12 @@ export function NavigationControls({
 	return (
 		<div className={cn("flex items-center gap-2")}>
 			<Button
+				variant="ghost"
 				type="button"
 				onClick={() => onNavigate("back")}
 				disabled={!canGoBack}
 				className={cn(
-					"h-auto p-1 rounded-full non-draggable",
-					"text-foreground",
+					"h-auto w-auto p-1 rounded-full non-draggable",
 					canGoBack ? "hover:bg-muted" : "opacity-50 cursor-not-allowed",
 				)}
 				aria-label="Go back"
@@ -31,12 +31,12 @@ export function NavigationControls({
 				<ArrowLeft size="16" />
 			</Button>
 			<Button
+				variant="ghost"
 				type="button"
 				onClick={() => onNavigate("forward")}
 				disabled={!canGoForward}
 				className={cn(
-					"h-auto p-1 rounded-full non-draggable",
-					"text-foreground",
+					"h-auto w-auto p-1 rounded-full non-draggable",
 					canGoForward ? "hover:bg-muted" : "opacity-50 cursor-not-allowed",
 				)}
 				aria-label="Go forward"
@@ -44,13 +44,12 @@ export function NavigationControls({
 				<ArrowRight size="16" />
 			</Button>
 			<Button
+				variant="ghost"
 				type="button"
-				onClick={() => {
-					onNavigate(isLoading ? "stop" : "refresh");
-				}}
+				onClick={() => onNavigate(isLoading ? "stop" : "refresh")}
 				className={cn(
-					"h-auto p-1 rounded-full non-draggable",
-					"text-foreground hover:bg-muted",
+					"h-auto w-auto p-1 rounded-full non-draggable",
+					isLoading ? "text-red-500 hover:text-red-600" : "",
 				)}
 				aria-label={isLoading ? "Stop loading" : "Refresh page"}
 			>

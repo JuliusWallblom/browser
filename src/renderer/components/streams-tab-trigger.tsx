@@ -8,12 +8,13 @@ export function StreamsTabTrigger() {
 	return (
 		<div className={cn("flex items-center gap-2")}>
 			<Button
+				variant="ghost"
 				size="icon"
 				type="button"
 				onClick={toggleLeftPanel}
 				className={cn(
-					"h-auto p-1 rounded-full non-draggable",
-					"text-muted-foreground hover:bg-muted",
+					"h-auto w-auto p-1 rounded-full non-draggable",
+					"text-muted-foreground",
 					isLeftPanelOpen && "text-primary",
 				)}
 				aria-label={
