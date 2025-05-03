@@ -13,9 +13,14 @@ interface DarwinMenuItemConstructorOptions extends MenuItemConstructorOptions {
 
 export default class MenuBuilder {
 	mainWindow: BrowserWindow;
+	createWindow: () => Promise<BrowserWindow>;
 
-	constructor(mainWindow: BrowserWindow) {
+	constructor(
+		mainWindow: BrowserWindow,
+		createWindow: () => Promise<BrowserWindow>,
+	) {
 		this.mainWindow = mainWindow;
+		this.createWindow = createWindow;
 	}
 
 	buildMenu(): Menu {
@@ -54,17 +59,17 @@ export default class MenuBuilder {
 
 	buildDarwinTemplate(): MenuItemConstructorOptions[] {
 		const subMenuAbout: DarwinMenuItemConstructorOptions = {
-			label: "Electron",
+			label: "Merlin",
 			submenu: [
 				{
-					label: "About ElectronReact",
+					label: "About Merlin",
 					selector: "orderFrontStandardAboutPanel:",
 				},
 				{ type: "separator" },
 				{ label: "Services", submenu: [] },
 				{ type: "separator" },
 				{
-					label: "Hide ElectronReact",
+					label: "Hide Merlin",
 					accelerator: "Command+H",
 					selector: "hide:",
 				},
@@ -81,6 +86,24 @@ export default class MenuBuilder {
 					click: () => {
 						app.quit();
 					},
+				},
+			],
+		};
+		const subMenuFile: DarwinMenuItemConstructorOptions = {
+			label: "File",
+			submenu: [
+				{
+					label: "New Window",
+					accelerator: "Command+N",
+					click: () => {
+						this.createWindow();
+					},
+				},
+				{ type: "separator" },
+				{
+					label: "Close Window",
+					accelerator: "Command+W",
+					selector: "performClose:",
 				},
 			],
 		};
@@ -189,7 +212,14 @@ export default class MenuBuilder {
 				? subMenuViewDev
 				: subMenuViewProd;
 
-		return [subMenuAbout, subMenuEdit, subMenuView, subMenuWindow, subMenuHelp];
+		return [
+			subMenuAbout,
+			subMenuFile,
+			subMenuEdit,
+			subMenuView,
+			subMenuWindow,
+			subMenuHelp,
+		];
 	}
 
 	buildDefaultTemplate() {

@@ -103,44 +103,60 @@ export function WebView({
 		};
 
 		const handleDidStartLoading = () => {
+			const webview = webviewRef.current;
+			if (!webview) return;
+
 			console.log("[WebView] did-start-loading", {
-				url: webview.getURL(),
+				url: isReadyRef.current ? webview.getURL() : "not ready",
 				isReady: isReadyRef.current,
 				initialLoadDone: initialLoadDoneRef.current,
 				isRefreshing: isRefreshingRef.current,
 			});
 
-			// Show loading state for initial load or refresh
-			if (!initialLoadDoneRef.current || isRefreshingRef.current) {
+			// Show loading state for initial load or refresh, but not for about:blank
+			if (
+				(!initialLoadDoneRef.current || isRefreshingRef.current) &&
+				webview.getURL() !== "about:blank"
+			) {
 				updateTab(tab.id, { isLoading: true });
 			}
 		};
 
 		const handleDidStopLoading = async () => {
+			const webview = webviewRef.current;
+			if (!webview) return;
+
 			console.log("[WebView] did-stop-loading", {
-				url: webview.getURL(),
+				url: isReadyRef.current ? webview.getURL() : "not ready",
 				isReady: isReadyRef.current,
 				initialLoadDone: initialLoadDoneRef.current,
 				isRefreshing: isRefreshingRef.current,
 			});
 
-			// Update loading state for initial load or refresh
-			if (!initialLoadDoneRef.current || isRefreshingRef.current) {
+			// Update loading state for initial load or refresh, but not for about:blank
+			if (
+				(!initialLoadDoneRef.current || isRefreshingRef.current) &&
+				webview.getURL() !== "about:blank"
+			) {
 				if (isReadyRef.current) {
 					updateNavigationState();
 					// Try to update favicon before marking as done loading
 					await updateFavicon();
 				}
 				updateTab(tab.id, { isLoading: false });
-				initialLoadDoneRef.current = true;
-				isRefreshingRef.current = false;
 			}
+
+			initialLoadDoneRef.current = true;
+			isRefreshingRef.current = false;
 		};
 
 		const handleDidNavigate = (event: Electron.DidNavigateEvent) => {
+			const webview = webviewRef.current;
+			if (!webview) return;
+
 			console.log("[WebView] did-navigate", {
 				url: event.url,
-				currentUrl: webview.getURL(),
+				currentUrl: isReadyRef.current ? webview.getURL() : "not ready",
 				isReady: isReadyRef.current,
 				initialLoadDone: initialLoadDoneRef.current,
 				isRefreshing: isRefreshingRef.current,
@@ -175,10 +191,13 @@ export function WebView({
 		const handleDidNavigateInPage = (
 			event: Electron.DidNavigateInPageEvent,
 		) => {
+			const webview = webviewRef.current;
+			if (!webview) return;
+
 			console.log("[WebView] did-navigate-in-page", {
 				url: event.url,
 				isMainFrame: event.isMainFrame,
-				currentUrl: webview.getURL(),
+				currentUrl: isReadyRef.current ? webview.getURL() : "not ready",
 				isReady: isReadyRef.current,
 				initialLoadDone: initialLoadDoneRef.current,
 				isRefreshing: isRefreshingRef.current,

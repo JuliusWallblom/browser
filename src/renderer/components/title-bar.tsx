@@ -58,6 +58,7 @@ export function TitleBar({
 				isLoading={isLoading}
 				canGoBack={canGoBack}
 				canGoForward={canGoForward}
+				url={url}
 			/>
 			<URLBar
 				url={url}

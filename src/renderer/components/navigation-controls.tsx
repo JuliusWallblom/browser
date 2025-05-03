@@ -7,6 +7,7 @@ interface NavigationControlsProps {
 	isLoading: boolean;
 	canGoBack: boolean;
 	canGoForward: boolean;
+	url: string;
 }
 
 export function NavigationControls({
@@ -14,7 +15,10 @@ export function NavigationControls({
 	isLoading,
 	canGoBack,
 	canGoForward,
+	url,
 }: NavigationControlsProps) {
+	const isBlankPage = url === "about:blank";
+
 	return (
 		<div className={cn("flex items-center gap-2")}>
 			<Button
@@ -47,7 +51,11 @@ export function NavigationControls({
 				variant="ghost"
 				type="button"
 				onClick={() => onNavigate(isLoading ? "stop" : "refresh")}
-				className="h-auto w-auto p-1 rounded-full non-draggable"
+				disabled={isBlankPage}
+				className={cn(
+					"h-auto w-auto p-1 rounded-full non-draggable",
+					isBlankPage && "opacity-50 cursor-not-allowed",
+				)}
 				aria-label={isLoading ? "Stop loading" : "Refresh page"}
 			>
 				{isLoading ? <X size="16" /> : <RotateCcw size="16" />}

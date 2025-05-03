@@ -16,6 +16,7 @@ import {
 	protocol,
 	shell,
 	webContents,
+	Menu,
 } from "electron";
 import log from "electron-log";
 import { autoUpdater } from "electron-updater";
@@ -29,8 +30,10 @@ class AppUpdater {
 	}
 }
 
-let mainWindow: BrowserWindow | null = null;
 let isStoppingNavigation = false;
+
+// Track all windows
+const windows = new Set<BrowserWindow>();
 
 ipcMain.on("ipc-example", async (event, arg) => {
 	const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
@@ -112,7 +115,7 @@ const createWindow = async () => {
 		return path.join(RESOURCES_PATH, ...paths);
 	};
 
-	mainWindow = new BrowserWindow({
+	const newWindow = new BrowserWindow({
 		show: false,
 		width: 1024,
 		height: 728,
@@ -132,44 +135,40 @@ const createWindow = async () => {
 		},
 	});
 
+	windows.add(newWindow);
+
 	if (process.env.VITE_DEV_SERVER_URL) {
-		mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
+		newWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
 	} else {
-		mainWindow.loadFile(path.join(__dirname, "../renderer/index.html"));
+		newWindow.loadFile(path.join(__dirname, "../renderer/index.html"));
 	}
 
-	mainWindow.on("ready-to-show", () => {
-		if (!mainWindow) {
-			throw new Error('"mainWindow" is not defined');
+	newWindow.on("ready-to-show", () => {
+		if (!newWindow) {
+			throw new Error('"newWindow" is not defined');
 		}
 		if (process.env.START_MINIMIZED) {
-			mainWindow.minimize();
+			newWindow.minimize();
 		} else {
-			mainWindow.show();
+			newWindow.show();
 		}
 	});
 
-	mainWindow.on("closed", () => {
-		mainWindow = null;
+	newWindow.on("closed", () => {
+		windows.delete(newWindow);
 	});
 
-	const menuBuilder = new MenuBuilder(mainWindow);
+	const menuBuilder = new MenuBuilder(newWindow, createWindow);
 	menuBuilder.buildMenu();
 
 	// Open urls in the user's browser
-	mainWindow.webContents.setWindowOpenHandler((edata) => {
+	newWindow.webContents.setWindowOpenHandler((edata) => {
 		shell.openExternal(edata.url);
 		return { action: "deny" };
 	});
 
-	// Remove this if your app does not use auto updates
-	// eslint-disable-next-line
-	new AppUpdater();
+	return newWindow;
 };
-
-/**
- * Add event listeners...
- */
 
 app.on("window-all-closed", () => {
 	// Respect the OSX convention of having the application in memory even
@@ -198,6 +197,19 @@ app
 		// Register as default protocol client
 		if (!app.isDefaultProtocolClient("merlin")) {
 			app.setAsDefaultProtocolClient("merlin");
+		}
+
+		// Set up dock menu for macOS
+		if (process.platform === "darwin") {
+			const dockMenu = Menu.buildFromTemplate([
+				{
+					label: "New Window",
+					click: () => {
+						createWindow();
+					},
+				},
+			]);
+			app.dock.setMenu(dockMenu);
 		}
 
 		// Handle the protocol
@@ -323,7 +335,7 @@ app
 		app.on("activate", () => {
 			// On macOS it's common to re-create a window in the app when the
 			// dock icon is clicked and there are no other windows open.
-			if (mainWindow === null) createWindow();
+			if (windows.size === 0) createWindow();
 		});
 	})
 	.catch(console.log);

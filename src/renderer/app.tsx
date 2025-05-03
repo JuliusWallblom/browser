@@ -130,7 +130,7 @@ function Browser() {
 		addTab({
 			url: "about:blank",
 			title: "New Tab",
-			isLoading: false,
+			isLoading: false, // Never show loading for new tabs
 			canGoBack: false,
 			canGoForward: false,
 			webviewKey: Date.now(),
