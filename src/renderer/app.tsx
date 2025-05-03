@@ -28,7 +28,7 @@ function Browser() {
 	useEffect(() => {
 		if (tabs.length === 0) {
 			addTab({
-				url: "about:blank",
+				url: DEFAULT_URL,
 				title: "New Tab",
 				isLoading: false,
 				canGoBack: false,
@@ -126,9 +126,9 @@ function Browser() {
 
 	const handleAddTab = useCallback(() => {
 		// Update URL state first
-		setCurrentUrl("about:blank");
+		setCurrentUrl(DEFAULT_URL);
 		addTab({
-			url: "about:blank",
+			url: DEFAULT_URL,
 			title: "New Tab",
 			isLoading: false, // Never show loading for new tabs
 			canGoBack: false,

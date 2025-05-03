@@ -1,1 +1,1 @@
-export const DEFAULT_URL: Readonly<string> = "https://www.google.com";
+export const DEFAULT_URL: Readonly<string> = "about:blank";

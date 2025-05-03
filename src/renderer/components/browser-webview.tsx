@@ -106,8 +106,9 @@ export function WebView({
 			const webview = webviewRef.current;
 			if (!webview) return;
 
+			const currentUrl = isReadyRef.current ? webview.getURL() : tab.url;
 			console.log("[WebView] did-start-loading", {
-				url: isReadyRef.current ? webview.getURL() : "not ready",
+				url: currentUrl,
 				isReady: isReadyRef.current,
 				initialLoadDone: initialLoadDoneRef.current,
 				isRefreshing: isRefreshingRef.current,
@@ -116,7 +117,7 @@ export function WebView({
 			// Show loading state for initial load or refresh, but not for about:blank
 			if (
 				(!initialLoadDoneRef.current || isRefreshingRef.current) &&
-				webview.getURL() !== "about:blank"
+				currentUrl !== "about:blank"
 			) {
 				updateTab(tab.id, { isLoading: true });
 			}
@@ -126,8 +127,9 @@ export function WebView({
 			const webview = webviewRef.current;
 			if (!webview) return;
 
+			const currentUrl = isReadyRef.current ? webview.getURL() : tab.url;
 			console.log("[WebView] did-stop-loading", {
-				url: isReadyRef.current ? webview.getURL() : "not ready",
+				url: currentUrl,
 				isReady: isReadyRef.current,
 				initialLoadDone: initialLoadDoneRef.current,
 				isRefreshing: isRefreshingRef.current,
@@ -136,7 +138,7 @@ export function WebView({
 			// Update loading state for initial load or refresh, but not for about:blank
 			if (
 				(!initialLoadDoneRef.current || isRefreshingRef.current) &&
-				webview.getURL() !== "about:blank"
+				currentUrl !== "about:blank"
 			) {
 				if (isReadyRef.current) {
 					updateNavigationState();
@@ -156,7 +158,7 @@ export function WebView({
 
 			console.log("[WebView] did-navigate", {
 				url: event.url,
-				currentUrl: isReadyRef.current ? webview.getURL() : "not ready",
+				currentUrl: isReadyRef.current ? webview.getURL() : tab.url,
 				isReady: isReadyRef.current,
 				initialLoadDone: initialLoadDoneRef.current,
 				isRefreshing: isRefreshingRef.current,
@@ -197,7 +199,7 @@ export function WebView({
 			console.log("[WebView] did-navigate-in-page", {
 				url: event.url,
 				isMainFrame: event.isMainFrame,
-				currentUrl: isReadyRef.current ? webview.getURL() : "not ready",
+				currentUrl: isReadyRef.current ? webview.getURL() : tab.url,
 				isReady: isReadyRef.current,
 				initialLoadDone: initialLoadDoneRef.current,
 				isRefreshing: isRefreshingRef.current,
@@ -257,7 +259,7 @@ export function WebView({
 			webview.removeEventListener("did-fail-load", handleDidFailLoad);
 			webview.removeEventListener("page-title-updated", handlePageTitleUpdated);
 		};
-	}, [tab.id, updateTab, updateNavigationState, updateFavicon]);
+	}, [tab.id, tab.url, updateTab, updateNavigationState, updateFavicon]);
 
 	return (
 		<webview
