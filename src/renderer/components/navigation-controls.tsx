@@ -47,10 +47,7 @@ export function NavigationControls({
 				variant="ghost"
 				type="button"
 				onClick={() => onNavigate(isLoading ? "stop" : "refresh")}
-				className={cn(
-					"h-auto w-auto p-1 rounded-full non-draggable",
-					isLoading ? "text-red-500 hover:text-red-600" : "",
-				)}
+				className="h-auto w-auto p-1 rounded-full non-draggable"
 				aria-label={isLoading ? "Stop loading" : "Refresh page"}
 			>
 				{isLoading ? <X size="16" /> : <RotateCcw size="16" />}

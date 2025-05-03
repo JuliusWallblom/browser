@@ -8,15 +8,21 @@ import { TabsProvider, useTabs } from "./contexts/tabs-context";
 import { BrowserContent } from "./components/browser-content";
 import { DEFAULT_URL } from "@/constants/app";
 import { WebviewProvider, useWebviews } from "./contexts/webview-context";
+import {
+	useKeyboardShortcuts,
+	SHORTCUTS,
+} from "./hooks/use-keyboard-shortcuts";
 
 type View = "webview" | "settings";
 
 function Browser() {
 	const { theme, cycleTheme } = useTheme();
-	const { tabs, activeTabId, updateTab, addTab } = useTabs();
+	const { tabs, activeTabId, updateTab, addTab, removeTab } = useTabs();
 	const { webviewRefs } = useWebviews();
 	const [currentView, setCurrentView] = useState<View>("webview");
 	const [currentUrl, setCurrentUrl] = useState(DEFAULT_URL);
+	const urlInputRef = useRef<HTMLInputElement>(null);
+	const [shouldFocusAndSelect, setShouldFocusAndSelect] = useState(false);
 
 	// Initialize first tab if none exist
 	useEffect(() => {
@@ -85,13 +91,21 @@ function Browser() {
 			e.preventDefault();
 			if (!activeTabId) return;
 
-			const newUrl = currentUrl.trim();
-			if (!newUrl) return;
+			const input = currentUrl.trim();
+			if (!input) return;
 
-			// Add protocol if missing
-			const urlToLoad = !/^[a-zA-Z]+:\/\//.test(newUrl)
-				? `https://${newUrl}`
-				: newUrl;
+			// Check if input is a URL or search term
+			const isUrl =
+				/^[a-zA-Z]+:\/\//.test(input) || // Has protocol
+				/^[\w-]+\.([\w-]+\.)*[\w-]+$/.test(input) || // Domain name pattern
+				/^localhost(:\d+)?$/.test(input); // Localhost
+
+			// Create the URL to load
+			const urlToLoad = isUrl
+				? !input.includes("://")
+					? `https://${input}`
+					: input
+				: `https://www.google.com/search?q=${encodeURIComponent(input)}`;
 
 			updateTab(activeTabId, { url: urlToLoad, isLoading: true });
 
@@ -111,6 +125,8 @@ function Browser() {
 	}, []);
 
 	const handleAddTab = useCallback(() => {
+		// Update URL state first
+		setCurrentUrl("about:blank");
 		addTab({
 			url: "about:blank",
 			title: "New Tab",
@@ -119,7 +135,66 @@ function Browser() {
 			canGoForward: false,
 			webviewKey: Date.now(),
 		});
+		// Set focus flag after URL is updated
+		setShouldFocusAndSelect(true);
 	}, [addTab]);
+
+	// Reset shouldFocusAndSelect after it's been handled
+	useEffect(() => {
+		if (shouldFocusAndSelect) {
+			setShouldFocusAndSelect(false);
+		}
+	}, [shouldFocusAndSelect]);
+
+	// Focus and select URL bar text when switching to a blank tab
+	useEffect(() => {
+		if (currentUrl === "about:blank") {
+			setTimeout(() => {
+				urlInputRef.current?.focus();
+				urlInputRef.current?.select();
+			}, 0);
+		}
+	}, [currentUrl]);
+
+	const handleCloseTab = useCallback(() => {
+		if (activeTabId) {
+			removeTab(activeTabId);
+		}
+	}, [activeTabId, removeTab]);
+
+	const handleNextTab = useCallback(() => {
+		if (!activeTabId) return;
+		const currentIndex = tabs.findIndex((tab) => tab.id === activeTabId);
+		const nextIndex = (currentIndex + 1) % tabs.length;
+		const nextTab = tabs[nextIndex];
+		if (nextTab) {
+			updateTab(nextTab.id, {});
+		}
+	}, [activeTabId, tabs, updateTab]);
+
+	const handlePreviousTab = useCallback(() => {
+		if (!activeTabId) return;
+		const currentIndex = tabs.findIndex((tab) => tab.id === activeTabId);
+		const previousIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+		const previousTab = tabs[previousIndex];
+		if (previousTab) {
+			updateTab(previousTab.id, {});
+		}
+	}, [activeTabId, tabs, updateTab]);
+
+	const handleFocusUrlBar = useCallback(() => {
+		urlInputRef.current?.focus();
+		urlInputRef.current?.select();
+	}, []);
+
+	// Set up keyboard shortcuts
+	useKeyboardShortcuts([
+		{ ...SHORTCUTS.NEW_TAB, handler: handleAddTab },
+		{ ...SHORTCUTS.CLOSE_TAB, handler: handleCloseTab },
+		{ ...SHORTCUTS.NEXT_TAB, handler: handleNextTab },
+		{ ...SHORTCUTS.PREVIOUS_TAB, handler: handlePreviousTab },
+		{ ...SHORTCUTS.FOCUS_URL_BAR, handler: handleFocusUrlBar },
+	]);
 
 	const activeTab = tabs.find((tab) => tab.id === activeTabId);
 
@@ -157,6 +232,8 @@ function Browser() {
 				onThemeChange={cycleTheme}
 				onViewChange={handleViewChange}
 				onAddTab={handleAddTab}
+				urlInputRef={urlInputRef}
+				shouldFocusAndSelect={shouldFocusAndSelect}
 			/>
 
 			<div className="flex-1 flex overflow-hidden">

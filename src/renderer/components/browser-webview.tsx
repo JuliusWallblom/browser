@@ -47,8 +47,14 @@ export function WebView({
 		try {
 			const faviconUrl = await webview.executeJavaScript(`
 				(function() {
-					const icons = Array.from(document.querySelectorAll('link[rel~="icon"], link[rel="shortcut icon"]'));
-					if (icons.length === 0) return null;
+					// Try to find favicon from link elements
+					const icons = Array.from(document.querySelectorAll('link[rel*="icon"]'));
+					
+					// If no icons found, try Google's special format
+					if (icons.length === 0) {
+						const domain = window.location.hostname;
+						return domain ? 'https://www.google.com/s2/favicons?domain=' + domain : null;
+					}
 					
 					// Sort by size preference if specified
 					const sortedIcons = icons.sort((a, b) => {

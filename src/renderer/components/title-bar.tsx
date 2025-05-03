@@ -6,6 +6,7 @@ import { StreamsTabTrigger } from "./streams-tab-trigger";
 import { URLBar } from "./url-bar";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import type { RefObject } from "react";
 
 type Theme = "system" | "light" | "dark";
 
@@ -23,6 +24,8 @@ interface TitleBarProps {
 	onThemeChange: () => void;
 	onViewChange: (view: "webview" | "settings") => void;
 	onAddTab: () => void;
+	urlInputRef?: RefObject<HTMLInputElement | null>;
+	shouldFocusAndSelect?: boolean;
 }
 
 export function TitleBar({
@@ -39,6 +42,8 @@ export function TitleBar({
 	onThemeChange,
 	onViewChange,
 	onAddTab,
+	urlInputRef,
+	shouldFocusAndSelect,
 }: TitleBarProps) {
 	return (
 		<div
@@ -61,6 +66,8 @@ export function TitleBar({
 				currentView={currentView}
 				onChange={onUrlChange}
 				onSubmit={onUrlSubmit}
+				urlInputRef={urlInputRef}
+				shouldFocusAndSelect={shouldFocusAndSelect}
 			/>
 			<Button
 				variant="ghost"
