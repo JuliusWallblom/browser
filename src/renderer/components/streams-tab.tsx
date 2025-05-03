@@ -1,6 +1,6 @@
 import { usePanels } from "@/hooks/use-panels";
-import { useTabs } from "../contexts/tabs-context";
-import type { Tab } from "../types/tab";
+import { useTabs } from "../../contexts/tabs-context";
+import type { Tab } from "../../types/tab";
 import { SidePanel } from "./side-panel";
 import { cn } from "@/lib/utils";
 import { X, Globe, Loader2 } from "lucide-react";

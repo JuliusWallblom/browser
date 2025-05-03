@@ -1,19 +1,12 @@
-import type React from "react";
+import type { ReactNode } from "react";
 import { createContext, useContext, useState, useCallback } from "react";
-
-export interface Tab {
-	id: string;
-	url: string;
-	title: string;
-	favicon?: string;
-	isLoading: boolean;
-	webviewKey: number;
-}
+import type { Tab } from "@/types/tab";
+import { DEFAULT_URL } from "@/constants/app";
 
 interface TabsContextType {
 	tabs: Tab[];
 	activeTabId: string | null;
-	addTab: (tab: Omit<Tab, "id">) => string;
+	addTab: (tab: Partial<Tab>) => string;
 	removeTab: (id: string) => void;
 	updateTab: (id: string, updates: Partial<Tab>) => void;
 	setActiveTab: (id: string) => void;
@@ -21,16 +14,25 @@ interface TabsContextType {
 
 const TabsContext = createContext<TabsContextType | null>(null);
 
-export function TabsProvider({ children }: { children: React.ReactNode }) {
+export function TabsProvider({ children }: { children: ReactNode }) {
 	const [tabs, setTabs] = useState<Tab[]>([]);
 	const [activeTabId, setActiveTabId] = useState<string | null>(null);
 
-	const addTab = useCallback((tab: Omit<Tab, "id">) => {
-		const id = crypto.randomUUID();
-		const newTab = { ...tab, id };
-		setTabs((prev) => [...prev, newTab]);
-		setActiveTabId(id);
-		return id;
+	const addTab = useCallback((tab: Partial<Tab>) => {
+		const newTab: Tab = {
+			id: crypto.randomUUID(),
+			url: tab.url || DEFAULT_URL,
+			title: tab.title || "New Tab",
+			isLoading: false,
+			webviewKey: Date.now(),
+			canGoBack: false,
+			canGoForward: false,
+			...tab,
+		};
+
+		setTabs((prevTabs) => [...prevTabs, newTab]);
+		setActiveTabId(newTab.id);
+		return newTab.id;
 	}, []);
 
 	const removeTab = useCallback(

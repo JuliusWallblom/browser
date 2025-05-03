@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback } from "react";
 import { cn } from "@/lib/utils";
-import type { Tab } from "../types/tab";
+import type { Tab } from "../../types/tab";
 
 interface WebViewProps {
 	tab: Tab;

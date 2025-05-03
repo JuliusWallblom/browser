@@ -4,14 +4,14 @@ import { Route, MemoryRouter as Router, Routes } from "react-router-dom";
 import AITab from "./components/ai-tab";
 import StreamsTab from "./components/streams-tab";
 import { TitleBar } from "./components/title-bar";
-import { TabsProvider, useTabs } from "./contexts/tabs-context";
+import { TabsProvider, useTabs } from "@/contexts/tabs-context";
 import { BrowserContent } from "./components/browser-content";
 import { DEFAULT_URL } from "@/constants/app";
-import { WebviewProvider, useWebviews } from "./contexts/webview-context";
+import { WebviewProvider, useWebviews } from "@/contexts/webview-context";
 import {
 	useKeyboardShortcuts,
 	SHORTCUTS,
-} from "./hooks/use-keyboard-shortcuts";
+} from "@/hooks/use-keyboard-shortcuts";
 
 type View = "webview" | "settings";
 
