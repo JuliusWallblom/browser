@@ -12,6 +12,7 @@ type Theme = "system" | "light" | "dark";
 
 interface TitleBarProps {
 	url: string;
+	activeUrl: string;
 	favicon?: string;
 	isLoading: boolean;
 	currentView: "webview" | "settings";
@@ -33,6 +34,7 @@ interface TitleBarProps {
 
 export function TitleBar({
 	url,
+	activeUrl,
 	favicon,
 	isLoading,
 	currentView,
@@ -63,6 +65,7 @@ export function TitleBar({
 				canGoBack={canGoBack}
 				canGoForward={canGoForward}
 				url={url}
+				activeUrl={activeUrl}
 			/>
 			<URLBar
 				url={url}

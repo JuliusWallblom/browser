@@ -11,6 +11,7 @@ interface NavigationControlsProps {
 	canGoBack: boolean;
 	canGoForward: boolean;
 	url: string;
+	activeUrl: string;
 }
 
 export function NavigationControls({
@@ -19,7 +20,9 @@ export function NavigationControls({
 	canGoBack,
 	canGoForward,
 	url,
+	activeUrl,
 }: NavigationControlsProps) {
+	const isBlankPage = activeUrl === "";
 	useEffect(() => {
 		if (!window.electron?.ipcRenderer) {
 			console.error("IPC renderer not available");
@@ -90,6 +93,7 @@ export function NavigationControls({
 			<Button
 				variant="ghost"
 				type="button"
+				disabled={isBlankPage}
 				onClick={() => onNavigate(isLoading ? "stop" : "refresh")}
 				onContextMenu={handleContextMenu("refresh")}
 				className={cn("h-auto w-auto p-1 rounded-full non-draggable")}
