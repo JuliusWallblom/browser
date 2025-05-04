@@ -258,7 +258,7 @@ function Browser() {
 
 			<TitleBar
 				url={currentUrl}
-				activeUrl={activeTab?.url}
+				activeUrl={activeTab?.url || ""}
 				favicon={activeTab?.favicon}
 				isLoading={activeTab?.isLoading || false}
 				currentView={currentView}
