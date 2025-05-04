@@ -11,12 +11,12 @@
 import path from "node:path";
 import {
 	BrowserWindow,
+	Menu,
 	app,
 	ipcMain,
 	protocol,
 	shell,
 	webContents,
-	Menu,
 } from "electron";
 import log from "electron-log";
 import { autoUpdater } from "electron-updater";
@@ -339,3 +339,46 @@ app
 		});
 	})
 	.catch(console.log);
+
+// Forward keyboard shortcuts from webviews to the main window
+app.on("web-contents-created", (event, contents) => {
+	if (contents.getType() === "webview") {
+		contents.on("before-input-event", (event, input) => {
+			// Only handle keyboard events with modifier keys
+			if (input.type === "keyDown" && (input.meta || input.control)) {
+				const key = input.key.toLowerCase();
+				const customShortcuts = ["t", "w", "[", "]", "l"];
+				const isCustomShortcut = customShortcuts.includes(key);
+
+				console.log("[main] Webview keyboard event:", {
+					key,
+					meta: input.meta,
+					control: input.control,
+					alt: input.alt,
+					shift: input.shift,
+					isCustomShortcut,
+				});
+
+				if (isCustomShortcut) {
+					// Forward our custom shortcuts to the main window
+					const mainWindow = BrowserWindow.getAllWindows()[0];
+					if (mainWindow) {
+						const modifiers: Array<"cmd" | "control" | "alt" | "shift"> = [];
+						if (input.meta) modifiers.push("cmd");
+						if (input.control) modifiers.push("control");
+						if (input.alt) modifiers.push("alt");
+						if (input.shift) modifiers.push("shift");
+
+						mainWindow.webContents.sendInputEvent({
+							type: "keyDown",
+							keyCode: input.key,
+							modifiers,
+						});
+						event.preventDefault();
+					}
+				}
+				// For non-custom shortcuts (like copy/paste), do nothing and let them pass through
+			}
+		});
+	}
+});

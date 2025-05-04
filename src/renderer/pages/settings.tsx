@@ -1,8 +1,8 @@
+import { Button } from "@/components/ui/button";
 import { useTheme } from "@/hooks/use-theme";
 import { Moon, Sun } from "lucide-react";
-import { Monitor, ArrowLeft } from "lucide-react";
+import { ArrowLeft, Monitor } from "lucide-react";
 import React from "react";
-import { Button } from "@/components/ui/button";
 
 interface SettingsPageProps {
 	onViewChange: (view: "webview" | "settings") => void;

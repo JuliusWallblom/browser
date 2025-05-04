@@ -48,30 +48,30 @@ export function SidePanel({
 
 	if (!isOpen) return null;
 
-	const handlePosition = position === "left" ? "right-[-12px]" : "left-[-12px]";
+	const handlePosition = position === "left" ? "right-[-8px]" : "left-[-8px]";
 
 	return (
 		<div
 			style={{ width: `${width}px` }}
 			className={cn(
-				"h-full bg-background relative flex-none",
+				"h-full bg-background relative flex-none flex flex-col",
 				position === "left" ? "border-r" : "border-l",
-				"border-border",
+				"border-transparent",
 			)}
 		>
-			<div className="p-2">{children}</div>
+			<div className="flex-1 min-h-0 overflow-hidden">{children}</div>
 			<div
 				ref={handleRef}
 				onPointerDown={startResize}
 				className={cn(
-					"absolute top-0 bottom-0 w-6 cursor-ew-resize touch-none group",
+					"absolute z-10 top-0 bottom-0 w-2 cursor-ew-resize touch-none group",
 					handlePosition,
 				)}
 			>
 				<div
 					className={cn(
-						"absolute inset-y-0 left-1/2 w-px",
-						"bg-border group-hover:bg-primary/50 group-active:bg-primary",
+						"absolute inset-y-0 left-0 w-px",
+						"bg-transparent group-hover:bg-primary/50 group-active:bg-primary",
 					)}
 				/>
 			</div>

@@ -13,7 +13,7 @@ export function AITabTrigger() {
 			type="button"
 			onClick={toggleRightPanel}
 			className={cn(
-				"h-auto w-auto p-1 rounded-full non-draggable",
+				"hidden h-auto w-auto p-1 rounded-full non-draggable",
 				"text-muted-foreground",
 				isRightPanelOpen && "text-primary",
 			)}

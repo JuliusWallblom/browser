@@ -1,17 +1,17 @@
+import { DEFAULT_URL } from "@/constants/app";
+import { TabsProvider, useTabs } from "@/contexts/tabs-context";
+import { WebviewProvider, useWebviews } from "@/contexts/webview-context";
+import {
+	SHORTCUTS,
+	useKeyboardShortcuts,
+} from "@/hooks/use-keyboard-shortcuts";
 import { useTheme } from "@/hooks/use-theme";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Route, MemoryRouter as Router, Routes } from "react-router-dom";
 import AITab from "./components/ai-tab";
+import { BrowserContent } from "./components/browser-content";
 import StreamsTab from "./components/streams-tab";
 import { TitleBar } from "./components/title-bar";
-import { TabsProvider, useTabs } from "@/contexts/tabs-context";
-import { BrowserContent } from "./components/browser-content";
-import { DEFAULT_URL } from "@/constants/app";
-import { WebviewProvider, useWebviews } from "@/contexts/webview-context";
-import {
-	useKeyboardShortcuts,
-	SHORTCUTS,
-} from "@/hooks/use-keyboard-shortcuts";
 
 type View = "webview" | "settings";
 
@@ -249,6 +249,19 @@ function Browser() {
 }
 
 export default function App() {
+	// Prevent default context menu
+	useEffect(() => {
+		const handleContextMenu = (e: MouseEvent) => {
+			e.preventDefault();
+			return false;
+		};
+
+		document.addEventListener("contextmenu", handleContextMenu);
+		return () => {
+			document.removeEventListener("contextmenu", handleContextMenu);
+		};
+	}, []);
+
 	return (
 		<Router>
 			<TabsProvider>

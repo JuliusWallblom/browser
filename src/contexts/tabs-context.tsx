@@ -1,7 +1,7 @@
-import type { ReactNode } from "react";
-import { createContext, useContext, useState, useCallback } from "react";
-import type { Tab } from "@/types/tab";
 import { DEFAULT_URL } from "@/constants/app";
+import type { Tab } from "@/types/tab";
+import type { ReactNode } from "react";
+import { createContext, useCallback, useContext, useState } from "react";
 
 interface TabsContextType {
 	tabs: Tab[];

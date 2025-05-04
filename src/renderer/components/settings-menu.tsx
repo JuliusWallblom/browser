@@ -24,11 +24,6 @@ export default function SettingsMenu({
 		onUrlChange("merlin://settings");
 	};
 
-	const handleAboutClick = () => {
-		// TODO: Implement about dialog
-		console.log("About clicked");
-	};
-
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
@@ -36,7 +31,7 @@ export default function SettingsMenu({
 					variant="ghost"
 					size="icon"
 					type="button"
-					className={cn("h-auto w-auto p-1 rounded-full non-draggable mr-2")}
+					className={cn("h-auto w-auto p-1 rounded-full non-draggable")}
 					aria-label={"Settings"}
 				>
 					<MoreVertical size="16" />

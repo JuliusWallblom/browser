@@ -30,31 +30,50 @@ const modifierKey = isMac ? "metaKey" : "ctrlKey";
 export function useKeyboardShortcuts(handlers: ShortcutHandler[]) {
 	useEffect(() => {
 		const handleKeyDown = (event: KeyboardEvent) => {
-			// Don't trigger shortcuts when typing in input fields
-			if (
-				event.target instanceof HTMLInputElement ||
-				event.target instanceof HTMLTextAreaElement
-			) {
+			console.log("[use-keyboard-shortcuts] Keydown event received:", {
+				key: event.key,
+				metaKey: event.metaKey,
+				ctrlKey: event.ctrlKey,
+				altKey: event.altKey,
+				shiftKey: event.shiftKey,
+			});
+
+			// Only handle events with modifier keys
+			if (!(event.metaKey || event.ctrlKey)) {
+				console.log("[use-keyboard-shortcuts] No modifier key, ignoring event");
 				return;
 			}
 
-			for (const {
-				command,
-				handler,
-				key,
-				metaKey,
-				ctrlKey,
-				altKey,
-				shiftKey,
-			} of handlers) {
-				const matchesKey = event.key.toLowerCase() === key.toLowerCase();
-				const matchesMetaKey =
-					metaKey === undefined || event.metaKey === metaKey;
-				const matchesCtrlKey =
-					ctrlKey === undefined || event.ctrlKey === ctrlKey;
-				const matchesAltKey = altKey === undefined || event.altKey === altKey;
-				const matchesShiftKey =
-					shiftKey === undefined || event.shiftKey === shiftKey;
+			// Check if this is one of our custom shortcuts
+			const key = event.key.toLowerCase();
+			const customShortcuts = ["t", "w", "[", "]", "l"];
+			const isCustomShortcut = customShortcuts.includes(key);
+
+			if (!isCustomShortcut) {
+				console.log(
+					"[use-keyboard-shortcuts] Not a custom shortcut, ignoring:",
+					key,
+				);
+				return;
+			}
+
+			// Find matching handler
+			for (const handler of handlers) {
+				const matchesKey =
+					event.key.toLowerCase() === handler.key.toLowerCase();
+				const matchesMetaKey = handler.metaKey ? event.metaKey : true;
+				const matchesCtrlKey = handler.ctrlKey ? event.ctrlKey : true;
+				const matchesAltKey = handler.altKey ? event.altKey : true;
+				const matchesShiftKey = handler.shiftKey ? event.shiftKey : true;
+
+				console.log("[use-keyboard-shortcuts] Checking shortcut match:", {
+					command: handler.command,
+					matchesKey,
+					matchesMetaKey,
+					matchesCtrlKey,
+					matchesAltKey,
+					matchesShiftKey,
+				});
 
 				if (
 					matchesKey &&
@@ -63,15 +82,21 @@ export function useKeyboardShortcuts(handlers: ShortcutHandler[]) {
 					matchesAltKey &&
 					matchesShiftKey
 				) {
+					console.log(
+						"[use-keyboard-shortcuts] Shortcut matched:",
+						handler.command,
+					);
 					event.preventDefault();
-					handler();
+					event.stopPropagation();
+					handler.handler();
 					break;
 				}
 			}
 		};
 
-		window.addEventListener("keydown", handleKeyDown);
-		return () => window.removeEventListener("keydown", handleKeyDown);
+		console.log("[use-keyboard-shortcuts] Setting up keyboard event listener");
+		window.addEventListener("keydown", handleKeyDown, true);
+		return () => window.removeEventListener("keydown", handleKeyDown, true);
 	}, [handlers]);
 }
 

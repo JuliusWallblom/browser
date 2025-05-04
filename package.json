@@ -45,17 +45,12 @@
 		"rebuild": "electron-rebuild --parallel --types prod,dev,optional --module-dir release/app",
 		"test": "jest"
 	},
-	"browserslist": [
-		"extends browserslist-config-erb"
-	],
+	"browserslist": ["extends browserslist-config-erb"],
 	"prettier": {
 		"singleQuote": true,
 		"overrides": [
 			{
-				"files": [
-					".prettierrc",
-					".eslintrc"
-				],
+				"files": [".prettierrc", ".eslintrc"],
 				"options": {
 					"parser": "json"
 				}
@@ -63,40 +58,27 @@
 		]
 	},
 	"jest": {
-		"moduleDirectories": [
-			"node_modules",
-			"release/app/node_modules",
-			"src"
-		],
-		"moduleFileExtensions": [
-			"js",
-			"jsx",
-			"ts",
-			"tsx",
-			"json"
-		],
+		"moduleDirectories": ["node_modules", "release/app/node_modules", "src"],
+		"moduleFileExtensions": ["js", "jsx", "ts", "tsx", "json"],
 		"moduleNameMapper": {
 			"\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/.erb/mocks/fileMock.js",
 			"\\.(css|less|sass|scss)$": "identity-obj-proxy"
 		},
-		"setupFiles": [
-			"./.erb/scripts/check-build-exists.ts"
-		],
+		"setupFiles": ["./.erb/scripts/check-build-exists.ts"],
 		"testEnvironment": "jsdom",
 		"testEnvironmentOptions": {
 			"url": "http://localhost/"
 		},
-		"testPathIgnorePatterns": [
-			"release/app/dist",
-			".erb/dll"
-		],
+		"testPathIgnorePatterns": ["release/app/dist", ".erb/dll"],
 		"transform": {
 			"\\.(ts|tsx|js|jsx)$": "ts-jest"
 		}
 	},
 	"dependencies": {
 		"@electron/notarize": "^3.0.0",
+		"@radix-ui/react-context-menu": "^2.2.12",
 		"@radix-ui/react-dropdown-menu": "^2.1.12",
+		"@radix-ui/react-scroll-area": "^1.2.6",
 		"@radix-ui/react-slot": "^1.2.0",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
@@ -177,20 +159,13 @@
 		"appId": "org.erb.ElectronReact",
 		"asar": true,
 		"asarUnpack": "**\\*.{node,dll}",
-		"files": [
-			"dist",
-			"node_modules",
-			"package.json"
-		],
+		"files": ["dist", "node_modules", "package.json"],
 		"mac": {
 			"sign": ".erb/scripts/notarize.js",
 			"notarize": false,
 			"target": {
 				"target": "default",
-				"arch": [
-					"arm64",
-					"x64"
-				]
+				"arch": ["arm64", "x64"]
 			},
 			"type": "distribution",
 			"hardenedRuntime": true,
@@ -213,14 +188,10 @@
 			]
 		},
 		"win": {
-			"target": [
-				"nsis"
-			]
+			"target": ["nsis"]
 		},
 		"linux": {
-			"target": [
-				"AppImage"
-			],
+			"target": ["AppImage"],
 			"category": "Development"
 		},
 		"directories": {
@@ -228,9 +199,7 @@
 			"buildResources": "assets",
 			"output": "release/build"
 		},
-		"extraResources": [
-			"./assets/**"
-		],
+		"extraResources": ["./assets/**"],
 		"publish": {
 			"provider": "github",
 			"owner": "electron-react-boilerplate",
@@ -253,11 +222,7 @@
 		}
 	},
 	"electronmon": {
-		"patterns": [
-			"!**/**",
-			"src/main/**",
-			".erb/dll/**"
-		],
+		"patterns": ["!**/**", "src/main/**", ".erb/dll/**"],
 		"logLevel": "quiet"
 	}
 }

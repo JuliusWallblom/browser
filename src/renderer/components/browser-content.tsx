@@ -1,9 +1,9 @@
-import { useCallback } from "react";
-import { WebView } from "./browser-webview";
-import { useTabs } from "../../contexts/tabs-context";
-import { SettingsPage } from "../pages/settings";
 import { cn } from "@/lib/utils";
+import { useCallback } from "react";
+import { useTabs } from "../../contexts/tabs-context";
 import { useWebviews } from "../../contexts/webview-context";
+import { SettingsPage } from "../pages/settings";
+import { WebView } from "./browser-webview";
 
 interface BrowserContentProps {
 	currentView: "webview" | "settings";
