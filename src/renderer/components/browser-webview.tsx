@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Tab } from "../../types/tab";
+import { ErrorPage } from "./error-page";
 
 interface WebViewProps {
 	tab: Tab;
@@ -19,6 +20,8 @@ export function WebView({
 	const isReadyRef = useRef(false);
 	const initialLoadDoneRef = useRef(false);
 	const isRefreshingRef = useRef(false);
+	const [errorEvent, setErrorEvent] =
+		useState<Electron.DidFailLoadEvent | null>(null);
 
 	const handleWebviewRef = useCallback(
 		(webview: Electron.WebviewTag | null) => {
@@ -121,7 +124,10 @@ export function WebView({
 				(!initialLoadDoneRef.current || isRefreshingRef.current) &&
 				currentUrl !== "about:blank"
 			) {
-				updateTab(tab.id, { isLoading: true });
+				updateTab(tab.id, {
+					isLoading: true,
+					isError: false, // Clear error state when starting to load
+				});
 			}
 		};
 
@@ -169,7 +175,8 @@ export function WebView({
 			// Always update URL, even for about:blank
 			updateTab(tab.id, {
 				url: event.url,
-				// Clear favicon and title when navigating to blank page
+				// Clear error state and favicon/title when navigating
+				isError: false,
 				...(event.url === "about:blank" && {
 					favicon: undefined,
 					title: "New Tab",
@@ -178,6 +185,7 @@ export function WebView({
 
 			// Reset initial load state on actual navigation
 			initialLoadDoneRef.current = false;
+			setErrorEvent(null);
 			if (isReadyRef.current) {
 				updateNavigationState();
 			}
@@ -208,7 +216,10 @@ export function WebView({
 			});
 
 			if (event.isMainFrame && event.url !== "about:blank") {
-				updateTab(tab.id, { url: event.url });
+				updateTab(tab.id, {
+					url: event.url,
+					isError: false, // Clear error state for in-page navigation
+				});
 				if (isReadyRef.current) {
 					updateNavigationState();
 					updateFavicon();
@@ -228,13 +239,19 @@ export function WebView({
 			});
 
 			if (event.isMainFrame) {
-				updateTab(tab.id, {
-					isLoading: false,
-					title: "Failed to load page",
-					favicon: undefined,
-				});
-				initialLoadDoneRef.current = true;
-				isRefreshingRef.current = false;
+				// Don't show error for cancelled requests or when navigating to about:blank
+				if (event.errorCode !== -3 && event.validatedURL !== "about:blank") {
+					setErrorEvent(event);
+					updateTab(tab.id, {
+						isLoading: false,
+						title: event.validatedURL,
+						favicon: undefined,
+						url: event.validatedURL,
+						isError: true,
+					});
+					initialLoadDoneRef.current = true;
+					isRefreshingRef.current = false;
+				}
 			}
 		};
 
@@ -263,21 +280,106 @@ export function WebView({
 		};
 	}, [tab.id, tab.url, updateTab, updateNavigationState, updateFavicon]);
 
+	useEffect(() => {
+		const webview = webviewRef.current;
+		if (!webview) return;
+
+		interface ShortcutEvent {
+			key: string;
+			metaKey: boolean;
+			ctrlKey: boolean;
+			altKey: boolean;
+			shiftKey: boolean;
+		}
+
+		// Handle forwarded shortcuts from webview
+		const handleMessage = (event: { channel: string; args: unknown[] }) => {
+			if (event.channel === "forward-shortcut") {
+				const shortcutEvent = event.args[0] as ShortcutEvent;
+				// Create and dispatch a new keyboard event
+				const keyEvent = new KeyboardEvent("keydown", {
+					key: shortcutEvent.key,
+					metaKey: shortcutEvent.metaKey,
+					ctrlKey: shortcutEvent.ctrlKey,
+					altKey: shortcutEvent.altKey,
+					shiftKey: shortcutEvent.shiftKey,
+					bubbles: true,
+				});
+				window.dispatchEvent(keyEvent);
+			}
+		};
+
+		webview.addEventListener("ipc-message", handleMessage);
+
+		return () => {
+			webview.removeEventListener("ipc-message", handleMessage);
+		};
+	}, []);
+
+	const handleRetry = () => {
+		const webview = webviewRef.current;
+		if (!webview) return;
+
+		setErrorEvent(null);
+		updateTab(tab.id, {
+			isLoading: true,
+			isError: false,
+		});
+		webview.loadURL(tab.url);
+	};
+
+	const handleGoBack = () => {
+		const webview = webviewRef.current;
+		if (!webview) return;
+
+		setErrorEvent(null);
+		updateTab(tab.id, {
+			isLoading: true,
+			isError: false,
+		});
+		webview.goBack();
+	};
+
+	const handleGoHome = () => {
+		const webview = webviewRef.current;
+		if (!webview) return;
+
+		setErrorEvent(null);
+		updateTab(tab.id, {
+			url: "about:blank",
+			title: "New Tab",
+			isLoading: false,
+			isError: false,
+		});
+		webview.loadURL("about:blank");
+	};
+
 	return (
 		<>
 			<webview
 				key={tab.id}
 				ref={handleWebviewRef}
-				src="about:blank"
 				className={cn(
 					"absolute inset-0 bg-background-primary",
-					!isActive && "hidden",
+					(!isActive || errorEvent) && "hidden",
 				)}
 				webpreferences="contextIsolation=yes, nodeIntegration=no, sandbox=yes, javascript=yes, webSecurity=yes, enableWebviewTag=yes"
 				partition="persist:main"
 				httpreferrer="strict-origin-when-cross-origin"
 				useragent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 			/>
+			{errorEvent !== null && isActive && (
+				<div className="absolute inset-0">
+					<ErrorPage
+						url={tab.url}
+						errorEvent={errorEvent}
+						onRetry={handleRetry}
+						onGoBack={handleGoBack}
+						onGoHome={handleGoHome}
+						canGoBack={tab.canGoBack}
+					/>
+				</div>
+			)}
 		</>
 	);
 }

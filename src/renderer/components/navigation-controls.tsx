@@ -20,11 +20,9 @@ export function NavigationControls({
 	canGoForward,
 	url,
 }: NavigationControlsProps) {
-	const isBlankPage = url === "about:blank";
-
 	useEffect(() => {
 		if (!window.electron?.ipcRenderer) {
-			console.error("Electron IPC renderer not available");
+			console.error("IPC renderer not available");
 			return;
 		}
 
@@ -94,11 +92,7 @@ export function NavigationControls({
 				type="button"
 				onClick={() => onNavigate(isLoading ? "stop" : "refresh")}
 				onContextMenu={handleContextMenu("refresh")}
-				disabled={isBlankPage}
-				className={cn(
-					"h-auto w-auto p-1 rounded-full non-draggable",
-					isBlankPage && "opacity-50 cursor-not-allowed",
-				)}
+				className={cn("h-auto w-auto p-1 rounded-full non-draggable")}
 				aria-label={isLoading ? "Stop loading" : "Refresh page"}
 			>
 				{isLoading ? <X size="16" /> : <RotateCcw size="16" />}

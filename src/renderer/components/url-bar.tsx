@@ -2,6 +2,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { Globe, Loader2, Settings } from "lucide-react";
 import { type RefObject, useEffect, useRef, useState } from "react";
+import { ErrorFavicon } from "./error-favicon";
 
 interface URLBarProps {
 	url: string;
@@ -12,6 +13,7 @@ interface URLBarProps {
 	onSubmit: (e: React.FormEvent) => void;
 	urlInputRef?: RefObject<HTMLInputElement | null>;
 	shouldFocusAndSelect?: boolean;
+	isError?: boolean;
 }
 
 export function URLBar({
@@ -23,6 +25,7 @@ export function URLBar({
 	onSubmit,
 	urlInputRef: externalRef,
 	shouldFocusAndSelect,
+	isError,
 }: URLBarProps) {
 	const internalRef = useRef<HTMLInputElement>(null);
 	const wasClickedRef = useRef(false);
@@ -47,6 +50,11 @@ export function URLBar({
 	useEffect(() => {
 		if (!isEditing && url !== inputValue) {
 			try {
+				// Skip updating to about:blank during loading
+				if (isLoading && url === "about:blank") {
+					return;
+				}
+
 				// Handle special URLs like merlin:// or about:blank
 				if (
 					url.startsWith("merlin://") ||
@@ -90,7 +98,7 @@ export function URLBar({
 				setInputValue(url);
 			}
 		}
-	}, [url, isEditing, inputValue]);
+	}, [url, isEditing, inputValue, isLoading]);
 
 	// Handle favicon loading
 	useEffect(() => {
@@ -108,8 +116,11 @@ export function URLBar({
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		setIsEditing(false);
-		inputRef.current?.blur();
 		onSubmit(e);
+		// Blur after a small delay to prevent the about:blank flash
+		setTimeout(() => {
+			inputRef.current?.blur();
+		}, 0);
 	};
 
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -126,7 +137,7 @@ export function URLBar({
 		setIsEditing(true);
 		setIsFocused(true);
 		// Always select all text for blank pages, otherwise only select if not clicked directly
-		if (url === "about:blank" || (!isFocused && !wasClickedRef.current)) {
+		if (url === "" || (!isFocused && !wasClickedRef.current)) {
 			// Use setTimeout to ensure selection happens after focus
 			setTimeout(() => {
 				e.target.select();
@@ -139,7 +150,7 @@ export function URLBar({
 		setIsEditing(false);
 		setIsFocused(false);
 		wasClickedRef.current = false;
-		// Only revert if the URL is different and we're not submitting
+		// Only revert if the URL is different, we're not submitting, and not loading
 		if (inputValue !== url && !isLoading) {
 			setInputValue(url);
 			onChange(url);
@@ -147,7 +158,7 @@ export function URLBar({
 	};
 
 	const getIcon = () => {
-		if (isLoading || isFaviconLoading) {
+		if (inputValue !== "about:blank" && (isLoading || isFaviconLoading)) {
 			return (
 				<Loader2 className={cn("w-4 h-4 text-muted-foreground animate-spin")} />
 			);
@@ -155,6 +166,10 @@ export function URLBar({
 
 		if (currentView === "settings") {
 			return <Settings className={cn("w-4 h-4 text-muted-foreground")} />;
+		}
+
+		if (isError) {
+			return <ErrorFavicon />;
 		}
 
 		if (favicon) {

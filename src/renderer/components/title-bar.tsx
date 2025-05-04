@@ -20,12 +20,15 @@ interface TitleBarProps {
 	canGoForward: boolean;
 	onUrlChange: (url: string) => void;
 	onUrlSubmit: (e: React.FormEvent) => void;
-	onNavigate: (action: "back" | "forward" | "refresh" | "stop") => void;
+	onNavigate: (
+		action: "back" | "forward" | "refresh" | "stop" | "force-refresh",
+	) => void;
 	onThemeChange: () => void;
 	onViewChange: (view: "webview" | "settings") => void;
 	onAddTab: () => void;
 	urlInputRef?: RefObject<HTMLInputElement | null>;
 	shouldFocusAndSelect?: boolean;
+	isError?: boolean;
 }
 
 export function TitleBar({
@@ -44,6 +47,7 @@ export function TitleBar({
 	onAddTab,
 	urlInputRef,
 	shouldFocusAndSelect,
+	isError,
 }: TitleBarProps) {
 	return (
 		<div
@@ -69,6 +73,7 @@ export function TitleBar({
 				onSubmit={onUrlSubmit}
 				urlInputRef={urlInputRef}
 				shouldFocusAndSelect={shouldFocusAndSelect}
+				isError={isError}
 			/>
 			<Button
 				variant="ghost"

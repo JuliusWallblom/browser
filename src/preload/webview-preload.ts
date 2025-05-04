@@ -1,3 +1,5 @@
+import { ipcRenderer } from "electron";
+
 // Set Content Security Policy
 const csp = {
 	"default-src": ["'self'", "https:", "http:", "data:", "ws:", "wss:"],
@@ -23,7 +25,7 @@ window.addEventListener("DOMContentLoaded", () => {
 		"[webview-preload] DOMContentLoaded - Setting up keyboard event listener",
 	);
 
-	// Forward only our custom keyboard shortcuts to the main window
+	// Forward our custom keyboard shortcuts to the main window
 	window.addEventListener(
 		"keydown",
 		(event) => {
@@ -41,7 +43,7 @@ window.addEventListener("DOMContentLoaded", () => {
 			if (event.metaKey || event.ctrlKey) {
 				const key = event.key.toLowerCase();
 				// List of our custom shortcuts
-				const customShortcuts = ["t", "w", "[", "]", "l"];
+				const customShortcuts = ["t", "w", "[", "]", "l", "e"];
 
 				console.log(
 					"[webview-preload] Checking if shortcut should be forwarded:",
@@ -55,26 +57,18 @@ window.addEventListener("DOMContentLoaded", () => {
 					console.log(
 						"[webview-preload] Forwarding custom shortcut to main window",
 					);
-					// Create a custom event that will be handled by the main process
-					window.parent.postMessage(
-						{
-							type: "forward-shortcut",
-							event: {
-								key: event.key,
-								metaKey: event.metaKey,
-								ctrlKey: event.ctrlKey,
-								altKey: event.altKey,
-								shiftKey: event.shiftKey,
-							},
-						},
-						"*",
-					);
+					// Send the shortcut event through IPC
+					ipcRenderer.sendToHost("forward-shortcut", {
+						key: event.key,
+						metaKey: event.metaKey,
+						ctrlKey: event.ctrlKey,
+						altKey: event.altKey,
+						shiftKey: event.shiftKey,
+					});
 
-					// Prevent the webview from handling these specific shortcuts
-					event.preventDefault();
-					event.stopPropagation();
+					// Don't prevent default behavior - let both the webview and our app handle the shortcut
 					console.log(
-						"[webview-preload] Prevented default behavior for custom shortcut",
+						"[webview-preload] Allowing both native and custom shortcut handling",
 					);
 				} else {
 					console.log(

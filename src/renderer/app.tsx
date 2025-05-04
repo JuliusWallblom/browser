@@ -6,6 +6,7 @@ import {
 	useKeyboardShortcuts,
 } from "@/hooks/use-keyboard-shortcuts";
 import { useTheme } from "@/hooks/use-theme";
+import { usePanels } from "@/hooks/use-panels";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Route, MemoryRouter as Router, Routes } from "react-router-dom";
 import AITab from "./components/ai-tab";
@@ -19,8 +20,9 @@ function Browser() {
 	const { theme, cycleTheme } = useTheme();
 	const { tabs, activeTabId, updateTab, addTab, removeTab } = useTabs();
 	const { webviewRefs } = useWebviews();
+	const { isLeftPanelOpen, setLeftPanelOpen } = usePanels();
 	const [currentView, setCurrentView] = useState<View>("webview");
-	const [currentUrl, setCurrentUrl] = useState(DEFAULT_URL);
+	const [currentUrl, setCurrentUrl] = useState("");
 	const urlInputRef = useRef<HTMLInputElement>(null);
 	const [shouldFocusAndSelect, setShouldFocusAndSelect] = useState(false);
 
@@ -28,7 +30,7 @@ function Browser() {
 	useEffect(() => {
 		if (tabs.length === 0) {
 			addTab({
-				url: DEFAULT_URL,
+				url: "",
 				title: "New Tab",
 				isLoading: false,
 				canGoBack: false,
@@ -99,7 +101,12 @@ function Browser() {
 			if (!activeTabId) return;
 
 			const input = currentUrl.trim();
-			if (!input) return;
+
+			// Special handling for empty input - load about:blank
+			if (!input) {
+				updateTab(activeTabId, { url: "about:blank", isLoading: false });
+				return;
+			}
 
 			// Check if input is a URL or search term
 			const isUrl =
@@ -117,11 +124,31 @@ function Browser() {
 			updateTab(activeTabId, { url: urlToLoad, isLoading: true });
 
 			const webview = webviewRefs.current.get(activeTabId);
-			if (webview) {
-				webview.loadURL(urlToLoad).catch((err) => {
-					console.error("Failed to load URL:", err);
-					updateTab(activeTabId, { isLoading: false });
-				});
+			if (!webview) return;
+
+			try {
+				// For new tabs or blank pages, first load about:blank
+				if (webview.src === "") {
+					webview.src = "about:blank";
+					// Wait for dom-ready before loading the actual URL
+					const handleDomReady = () => {
+						webview.loadURL(urlToLoad).catch((err) => {
+							console.error("Failed to load URL:", err);
+							updateTab(activeTabId, { isLoading: false });
+						});
+						webview.removeEventListener("dom-ready", handleDomReady);
+					};
+					webview.addEventListener("dom-ready", handleDomReady);
+				} else {
+					// For already initialized webviews, load directly
+					webview.loadURL(urlToLoad).catch((err) => {
+						console.error("Failed to load URL:", err);
+						updateTab(activeTabId, { isLoading: false });
+					});
+				}
+			} catch (err) {
+				console.error("Error loading URL:", err);
+				updateTab(activeTabId, { isLoading: false });
 			}
 		},
 		[activeTabId, currentUrl, updateTab, webviewRefs],
@@ -133,11 +160,11 @@ function Browser() {
 
 	const handleAddTab = useCallback(() => {
 		// Update URL state first
-		setCurrentUrl(DEFAULT_URL);
+		setCurrentUrl("");
 		addTab({
-			url: DEFAULT_URL,
+			url: "about:blank",
 			title: "New Tab",
-			isLoading: false, // Never show loading for new tabs
+			isLoading: false,
 			canGoBack: false,
 			canGoForward: false,
 			webviewKey: Date.now(),
@@ -155,7 +182,7 @@ function Browser() {
 
 	// Focus and select URL bar text when switching to a blank tab
 	useEffect(() => {
-		if (currentUrl === "about:blank") {
+		if (currentUrl === "") {
 			setTimeout(() => {
 				urlInputRef.current?.focus();
 				urlInputRef.current?.select();
@@ -201,6 +228,10 @@ function Browser() {
 		{ ...SHORTCUTS.NEXT_TAB, handler: handleNextTab },
 		{ ...SHORTCUTS.PREVIOUS_TAB, handler: handlePreviousTab },
 		{ ...SHORTCUTS.FOCUS_URL_BAR, handler: handleFocusUrlBar },
+		{
+			...SHORTCUTS.TOGGLE_STREAMS_TAB,
+			handler: () => setLeftPanelOpen(!isLeftPanelOpen),
+		},
 	]);
 
 	const activeTab = tabs.find((tab) => tab.id === activeTabId);
@@ -241,6 +272,7 @@ function Browser() {
 				onAddTab={handleAddTab}
 				urlInputRef={urlInputRef}
 				shouldFocusAndSelect={shouldFocusAndSelect}
+				isError={activeTab?.isError || false}
 			/>
 
 			<div className="flex-1 flex overflow-hidden">

@@ -1,3 +1,4 @@
+import { APP_NAME } from "../constants/app";
 import {
 	type BrowserWindow,
 	Menu,
@@ -45,7 +46,8 @@ export default class MenuBuilder {
 	setupDevelopmentEnvironment(): void {
 		this.mainWindow.webContents.on("context-menu", (event, props) => {
 			// Allow webview context menus to pass through
-			const targetIsWebview = (props as any).tagName === "WEBVIEW";
+			const targetIsWebview =
+				(props as { tagName?: string }).tagName === "WEBVIEW";
 			if (targetIsWebview) {
 				return;
 			}
@@ -65,17 +67,17 @@ export default class MenuBuilder {
 
 	buildDarwinTemplate(): MenuItemConstructorOptions[] {
 		const subMenuAbout: DarwinMenuItemConstructorOptions = {
-			label: "Merlin",
+			label: APP_NAME,
 			submenu: [
 				{
-					label: "About Merlin",
+					label: `About ${APP_NAME}`,
 					selector: "orderFrontStandardAboutPanel:",
 				},
 				{ type: "separator" },
 				{ label: "Services", submenu: [] },
 				{ type: "separator" },
 				{
-					label: "Hide Merlin",
+					label: `Hide ${APP_NAME}`,
 					accelerator: "Command+H",
 					selector: "hide:",
 				},

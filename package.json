@@ -1,17 +1,8 @@
 {
-	"name": "electron-react-boilerplate",
-	"description": "A foundation for scalable desktop apps",
-	"keywords": [
-		"electron",
-		"boilerplate",
-		"react",
-		"typescript",
-		"ts",
-		"sass",
-		"webpack",
-		"hot",
-		"reload"
-	],
+	"name": "manta",
+	"productName": "Manta",
+	"description": "Open source AI browser",
+	"keywords": ["manta", "react", "typescript"],
 	"homepage": "https://github.com/electron-react-boilerplate/electron-react-boilerplate#readme",
 	"bugs": {
 		"url": "https://github.com/electron-react-boilerplate/electron-react-boilerplate/issues"
@@ -155,12 +146,13 @@
 		"webpack-merge": "^6.0.1"
 	},
 	"build": {
-		"productName": "ElectronReact",
+		"productName": "Manta",
 		"appId": "org.erb.ElectronReact",
 		"asar": true,
 		"asarUnpack": "**\\*.{node,dll}",
 		"files": ["dist", "node_modules", "package.json"],
 		"mac": {
+			"icon": "assets/icon.icns",
 			"sign": ".erb/scripts/notarize.js",
 			"notarize": false,
 			"target": {

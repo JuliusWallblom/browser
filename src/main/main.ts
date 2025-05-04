@@ -9,6 +9,7 @@
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
 import path from "node:path";
+import fs from "node:fs";
 import {
 	BrowserWindow,
 	Menu,
@@ -17,11 +18,13 @@ import {
 	protocol,
 	shell,
 	webContents,
+	nativeImage,
 	type MenuItemConstructorOptions,
 } from "electron";
 import log from "electron-log";
 import { autoUpdater } from "electron-updater";
 import MenuBuilder from "./menu";
+import { APP_NAME } from "../constants/app";
 
 class AppUpdater {
 	constructor() {
@@ -117,10 +120,11 @@ const createWindow = async () => {
 	};
 
 	const newWindow = new BrowserWindow({
+		title: APP_NAME,
 		show: false,
 		width: 1024,
 		height: 728,
-		icon: getAssetPath("icon.png"),
+		icon: getAssetPath("manta_icon.png"),
 		frame: false,
 		titleBarStyle: "hidden",
 		trafficLightPosition: { x: 12, y: 12 },
@@ -139,10 +143,16 @@ const createWindow = async () => {
 		},
 	});
 
+	newWindow.setTitle(APP_NAME);
+
 	windows.add(newWindow);
 
 	if (process.env.VITE_DEV_SERVER_URL) {
 		newWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
+		// Prevent title changes in development
+		newWindow.webContents.on("page-title-updated", (event) => {
+			event.preventDefault();
+		});
 	} else {
 		newWindow.loadFile(path.join(__dirname, "../renderer/index.html"));
 	}
@@ -156,6 +166,8 @@ const createWindow = async () => {
 		} else {
 			newWindow.show();
 		}
+		// Set title after window is shown
+		newWindow.setTitle(APP_NAME);
 	});
 
 	newWindow.on("closed", () => {
@@ -195,9 +207,31 @@ protocol.registerSchemesAsPrivileged([
 	},
 ]);
 
+app.setName(APP_NAME);
+
 app
 	.whenReady()
 	.then(() => {
+		// Set dock icon for macOS
+		if (process.platform === "darwin" && app.dock) {
+			const iconPath = path.join(
+				"/Users/j/Developer/manta/assets/manta_icon.png",
+			);
+			console.log("Attempting to set dock icon with path:", iconPath);
+			console.log("Icon path exists:", fs.existsSync(iconPath));
+			try {
+				const icon = nativeImage.createFromPath(iconPath);
+				if (!icon.isEmpty()) {
+					app.dock.setIcon(icon);
+					console.log("Successfully set dock icon");
+				} else {
+					console.error("Failed to load icon: Icon is empty");
+				}
+			} catch (err) {
+				console.error("Failed to set dock icon:", err);
+			}
+		}
+
 		// Register as default protocol client
 		if (!app.isDefaultProtocolClient("merlin")) {
 			app.setAsDefaultProtocolClient("merlin");
@@ -213,7 +247,7 @@ app
 					},
 				},
 			]);
-			app.dock.setMenu(dockMenu);
+			(app as Electron.App & { dock: Electron.Dock }).dock.setMenu(dockMenu);
 		}
 
 		// Handle the protocol
@@ -467,7 +501,7 @@ app.on("web-contents-created", (event, contents) => {
 			// Only handle keyboard events with modifier keys
 			if (input.type === "keyDown" && (input.meta || input.control)) {
 				const key = input.key.toLowerCase();
-				const customShortcuts = ["t", "w", "[", "]", "l"];
+				const customShortcuts = ["t", "w", "[", "]", "l", "e"];
 				const isCustomShortcut = customShortcuts.includes(key);
 
 				console.log("[main] Webview keyboard event:", {

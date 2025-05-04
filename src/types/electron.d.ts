@@ -10,5 +10,13 @@ declare namespace Electron {
 		canGoBack(): boolean;
 		canGoForward(): boolean;
 		executeJavaScript<T = unknown>(code: string): Promise<T>;
+		addEventListener(
+			event: "ipc-message",
+			listener: (event: { channel: string; args: unknown[] }) => void,
+		): void;
+		removeEventListener(
+			event: "ipc-message",
+			listener: (event: { channel: string; args: unknown[] }) => void,
+		): void;
 	}
 }

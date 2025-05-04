@@ -1,16 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { usePanels } from "@/hooks/use-panels";
-import {
-	useKeyboardShortcuts,
-	SHORTCUTS,
-} from "@/hooks/use-keyboard-shortcuts";
 import { cn } from "@/lib/utils";
 import { Globe, Loader2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTabs } from "../../contexts/tabs-context";
 import type { Tab } from "../../types/tab";
 import { SidePanel } from "./side-panel";
+import { ErrorFavicon } from "./error-favicon";
 
 export default function StreamsTab() {
 	const { isLeftPanelOpen, setLeftPanelOpen } = usePanels();
@@ -18,16 +15,6 @@ export default function StreamsTab() {
 	const [hasScrollbar, setHasScrollbar] = useState(false);
 	const scrollAreaRef = useRef<HTMLDivElement>(null);
 	const contentRef = useRef<HTMLDivElement>(null);
-
-	useKeyboardShortcuts([
-		{
-			...SHORTCUTS.TOGGLE_STREAMS_TAB,
-			handler: () => {
-				console.log("[StreamsTab] Toggling panel:", { isLeftPanelOpen });
-				setLeftPanelOpen(!isLeftPanelOpen);
-			},
-		},
-	]);
 
 	const handleKeyDown = (e: React.KeyboardEvent, tab: Tab) => {
 		if (e.key === "Enter" || e.key === " ") {
@@ -37,7 +24,7 @@ export default function StreamsTab() {
 	};
 
 	const getTabTitle = (tab: Tab) => {
-		if (tab.url === "about:blank") {
+		if (tab.url === "") {
 			return "New Tab";
 		}
 		return tab.title || tab.url || "New Tab";
@@ -159,8 +146,10 @@ export default function StreamsTab() {
 							onKeyDown={(e) => handleKeyDown(e, tab)}
 						>
 							<div className="shrink-0 w-4 h-4">
-								{tab.isLoading ? (
+								{tab.url !== "about:blank" && tab.isLoading ? (
 									<Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+								) : tab.isError ? (
+									<ErrorFavicon />
 								) : tab.favicon ? (
 									<img
 										src={tab.favicon}

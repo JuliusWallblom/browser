@@ -7,4 +7,5 @@ export interface Tab {
 	webviewKey?: number;
 	canGoBack: boolean;
 	canGoForward: boolean;
+	isError?: boolean;
 }
