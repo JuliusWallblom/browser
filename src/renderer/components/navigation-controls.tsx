@@ -1,9 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, ArrowRight, RotateCcw, X } from "lucide-react";
+import { useEffect } from "react";
 
 interface NavigationControlsProps {
-	onNavigate: (action: "back" | "forward" | "refresh" | "stop") => void;
+	onNavigate: (
+		action: "back" | "forward" | "refresh" | "stop" | "force-refresh",
+	) => void;
 	isLoading: boolean;
 	canGoBack: boolean;
 	canGoForward: boolean;
@@ -19,12 +22,50 @@ export function NavigationControls({
 }: NavigationControlsProps) {
 	const isBlankPage = url === "about:blank";
 
+	useEffect(() => {
+		if (!window.electron?.ipcRenderer) {
+			console.error("Electron IPC renderer not available");
+			return;
+		}
+
+		const cleanup = window.electron.ipcRenderer.on(
+			"navigation-action",
+			(...args) => {
+				const [action] = args;
+				if (typeof action === "string") {
+					onNavigate(
+						action as "back" | "forward" | "refresh" | "stop" | "force-refresh",
+					);
+				}
+			},
+		);
+
+		return cleanup;
+	}, [onNavigate]);
+
+	const handleContextMenu =
+		(type: "back" | "forward" | "refresh") => (e: React.MouseEvent) => {
+			e.preventDefault();
+
+			if (!window.electron?.navigation) {
+				console.error("Electron navigation API not available");
+				return;
+			}
+
+			window.electron.navigation.showContextMenu(type, {
+				canGoBack,
+				canGoForward,
+				isLoading,
+			});
+		};
+
 	return (
 		<div className={cn("flex items-center gap-2")}>
 			<Button
 				variant="ghost"
 				type="button"
 				onClick={() => onNavigate("back")}
+				onContextMenu={handleContextMenu("back")}
 				disabled={!canGoBack}
 				className={cn(
 					"h-auto w-auto p-1 rounded-full non-draggable",
@@ -38,6 +79,7 @@ export function NavigationControls({
 				variant="ghost"
 				type="button"
 				onClick={() => onNavigate("forward")}
+				onContextMenu={handleContextMenu("forward")}
 				disabled={!canGoForward}
 				className={cn(
 					"h-auto w-auto p-1 rounded-full non-draggable",
@@ -51,6 +93,7 @@ export function NavigationControls({
 				variant="ghost"
 				type="button"
 				onClick={() => onNavigate(isLoading ? "stop" : "refresh")}
+				onContextMenu={handleContextMenu("refresh")}
 				disabled={isBlankPage}
 				className={cn(
 					"h-auto w-auto p-1 rounded-full non-draggable",

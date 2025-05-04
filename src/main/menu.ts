@@ -43,7 +43,13 @@ export default class MenuBuilder {
 	}
 
 	setupDevelopmentEnvironment(): void {
-		this.mainWindow.webContents.on("context-menu", (_, props) => {
+		this.mainWindow.webContents.on("context-menu", (event, props) => {
+			// Allow webview context menus to pass through
+			const targetIsWebview = (props as any).tagName === "WEBVIEW";
+			if (targetIsWebview) {
+				return;
+			}
+
 			const { x, y } = props;
 
 			Menu.buildFromTemplate([

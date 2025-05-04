@@ -7,7 +7,11 @@ import {
 	webContents,
 } from "electron";
 
-export type Channels = "ipc-example" | "webview-control";
+export type Channels =
+	| "ipc-example"
+	| "webview-control"
+	| "navigation-context-menu"
+	| "navigation-action";
 
 const electronHandler = {
 	ipcRenderer: {
@@ -30,6 +34,14 @@ const electronHandler = {
 	webview: {
 		stopLoading() {
 			ipcRenderer.send("webview-control", "stop-aggressive");
+		},
+	},
+	navigation: {
+		showContextMenu(
+			type: "back" | "forward" | "refresh",
+			params: { canGoBack: boolean; canGoForward: boolean; isLoading: boolean },
+		) {
+			ipcRenderer.send("navigation-context-menu", type, params);
 		},
 	},
 };

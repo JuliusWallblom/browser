@@ -1,6 +1,35 @@
 import { type IpcRendererEvent, contextBridge, ipcRenderer } from "electron";
 
-export type Channels = "ipc-example" | "webview-control";
+export type Channels =
+	| "ipc-example"
+	| "webview-control"
+	| "navigation-context-menu"
+	| "navigation-action";
+
+declare global {
+	interface Window {
+		electron: {
+			ipcRenderer: {
+				sendMessage(channel: Channels, ...args: unknown[]): void;
+				on(channel: Channels, func: (...args: unknown[]) => void): () => void;
+				once(channel: Channels, func: (...args: unknown[]) => void): void;
+			};
+			webview: {
+				stopLoading(): void;
+			};
+			navigation: {
+				showContextMenu(
+					type: "back" | "forward" | "refresh",
+					params: {
+						canGoBack: boolean;
+						canGoForward: boolean;
+						isLoading: boolean;
+					},
+				): void;
+			};
+		};
+	}
+}
 
 const electronHandler = {
 	ipcRenderer: {
@@ -23,6 +52,14 @@ const electronHandler = {
 	webview: {
 		stopLoading() {
 			ipcRenderer.send("webview-control", "stop-aggressive");
+		},
+	},
+	navigation: {
+		showContextMenu(
+			type: "back" | "forward" | "refresh",
+			params: { canGoBack: boolean; canGoForward: boolean; isLoading: boolean },
+		) {
+			ipcRenderer.send("navigation-context-menu", type, params);
 		},
 	},
 };

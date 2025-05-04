@@ -1,6 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { usePanels } from "@/hooks/use-panels";
+import {
+	useKeyboardShortcuts,
+	SHORTCUTS,
+} from "@/hooks/use-keyboard-shortcuts";
 import { cn } from "@/lib/utils";
 import { Globe, Loader2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -13,6 +17,17 @@ export default function StreamsTab() {
 	const { tabs, activeTabId, removeTab, setActiveTab } = useTabs();
 	const [hasScrollbar, setHasScrollbar] = useState(false);
 	const scrollAreaRef = useRef<HTMLDivElement>(null);
+	const contentRef = useRef<HTMLDivElement>(null);
+
+	useKeyboardShortcuts([
+		{
+			...SHORTCUTS.TOGGLE_STREAMS_TAB,
+			handler: () => {
+				console.log("[StreamsTab] Toggling panel:", { isLeftPanelOpen });
+				setLeftPanelOpen(!isLeftPanelOpen);
+			},
+		},
+	]);
 
 	const handleKeyDown = (e: React.KeyboardEvent, tab: Tab) => {
 		if (e.key === "Enter" || e.key === " ") {
@@ -30,51 +45,91 @@ export default function StreamsTab() {
 
 	useEffect(() => {
 		const checkScrollbar = () => {
+			const content = contentRef.current;
 			const viewport = scrollAreaRef.current?.querySelector(
 				"[data-radix-scroll-area-viewport]",
 			) as HTMLElement;
-			if (viewport) {
-				const viewportHeight = viewport.clientHeight;
-				const scrollHeight = viewport.scrollHeight;
-				const needsScrollbar = scrollHeight > viewportHeight + 2;
+
+			console.log("[StreamsTab] Checking scrollbar:", {
+				contentExists: !!content,
+				viewportExists: !!viewport,
+				contentHeight: content?.scrollHeight,
+				contentClientHeight: content?.clientHeight,
+				viewportHeight: viewport?.scrollHeight,
+				viewportClientHeight: viewport?.clientHeight,
+				numTabs: tabs.length,
+			});
+
+			if (!content || !viewport) {
+				console.log("[StreamsTab] Missing refs, skipping check");
+				return;
+			}
+
+			// Check both content and viewport
+			const contentHasOverflow = content.scrollHeight > content.clientHeight;
+			const viewportHasOverflow = viewport.scrollHeight > viewport.clientHeight;
+
+			console.log("[StreamsTab] Overflow status:", {
+				contentHasOverflow,
+				viewportHasOverflow,
+				currentHasScrollbar: hasScrollbar,
+			});
+
+			// Update if either has overflow
+			const needsScrollbar = contentHasOverflow || viewportHasOverflow;
+			if (needsScrollbar !== hasScrollbar) {
+				console.log("[StreamsTab] Updating scrollbar state:", {
+					needsScrollbar,
+				});
 				setHasScrollbar(needsScrollbar);
 			}
 		};
 
+		// Initial check
+		console.log("[StreamsTab] Running initial check");
 		checkScrollbar();
-		const timeoutId = setTimeout(checkScrollbar, 100);
 
-		const observer = new MutationObserver(() => {
+		// Check after a short delay to allow layout to settle
+		const timeoutId = setTimeout(() => {
+			console.log("[StreamsTab] Running delayed check");
 			checkScrollbar();
-			setTimeout(checkScrollbar, 100);
+		}, 100);
+
+		// Create a ResizeObserver to watch for size changes
+		const resizeObserver = new ResizeObserver((entries) => {
+			console.log("[StreamsTab] ResizeObserver triggered:", {
+				numEntries: entries.length,
+			});
+			checkScrollbar();
 		});
 
-		const viewport = scrollAreaRef.current?.querySelector(
-			"[data-radix-scroll-area-viewport]",
-		);
-		if (viewport) {
-			observer.observe(viewport, {
+		if (contentRef.current) {
+			resizeObserver.observe(contentRef.current);
+		}
+
+		// Create a MutationObserver to watch for content changes
+		const mutationObserver = new MutationObserver((mutations) => {
+			console.log("[StreamsTab] MutationObserver triggered:", {
+				numMutations: mutations.length,
+				types: mutations.map((m) => m.type),
+			});
+			checkScrollbar();
+		});
+
+		if (contentRef.current) {
+			mutationObserver.observe(contentRef.current, {
 				childList: true,
 				subtree: true,
 				characterData: true,
-				attributes: true,
 			});
-		}
-
-		const resizeObserver = new ResizeObserver(() => {
-			checkScrollbar();
-			setTimeout(checkScrollbar, 100);
-		});
-		if (viewport) {
-			resizeObserver.observe(viewport);
 		}
 
 		return () => {
 			clearTimeout(timeoutId);
-			observer.disconnect();
 			resizeObserver.disconnect();
+			mutationObserver.disconnect();
 		};
-	}, []);
+	}, [hasScrollbar, tabs.length]);
 
 	return (
 		<SidePanel
@@ -82,10 +137,11 @@ export default function StreamsTab() {
 			onClose={() => setLeftPanelOpen(false)}
 			position="left"
 		>
-			<ScrollArea ref={scrollAreaRef} className="h-full w-full">
+			<ScrollArea ref={scrollAreaRef} className="h-full w-full pl-[2px]">
 				<div
+					ref={contentRef}
 					className={cn(
-						"space-y-1 w-full pb-2 px-1 min-w-0",
+						"space-y-1 w-full pb-[6px] px-1 min-w-0",
 						hasScrollbar ? "pr-3" : "",
 					)}
 				>
@@ -96,7 +152,7 @@ export default function StreamsTab() {
 							role="button"
 							tabIndex={0}
 							className={cn(
-								"!h-8 rounded group flex items-center gap-2 px-2 cursor-pointer hover:bg-muted transition-colors text-left w-full min-w-0",
+								"!h-8 rounded group flex items-center gap-2 px-2 cursor-pointer hover:bg-muted text-left w-full min-w-0",
 								activeTabId === tab.id && "bg-muted",
 							)}
 							onClick={() => setActiveTab(tab.id)}
@@ -129,7 +185,7 @@ export default function StreamsTab() {
 									variant="ghost"
 									size="icon"
 									className={cn(
-										"h-8 w-4 bg-transparent opacity-0 group-hover:opacity-100 transition-opacity",
+										"h-8 w-4 bg-transparent opacity-0 group-hover:opacity-100",
 										tabs.length === 1 && "hidden",
 									)}
 									onClick={(e) => {

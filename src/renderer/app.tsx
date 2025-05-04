@@ -39,7 +39,7 @@ function Browser() {
 	}, [addTab, tabs.length]);
 
 	const handleNavigationClick = useCallback(
-		(action: "back" | "forward" | "refresh" | "stop") => {
+		(action: "back" | "forward" | "refresh" | "stop" | "force-refresh") => {
 			if (!activeTabId) return;
 
 			const webview = webviewRefs.current.get(activeTabId);
@@ -49,16 +49,23 @@ function Browser() {
 				switch (action) {
 					case "back":
 						webview.goBack();
+						updateTab(activeTabId, { isLoading: true });
 						break;
 					case "forward":
 						webview.goForward();
+						updateTab(activeTabId, { isLoading: true });
 						break;
 					case "refresh":
 						webview.reload();
 						updateTab(activeTabId, { isLoading: true });
 						break;
+					case "force-refresh":
+						webview.reloadIgnoringCache();
+						updateTab(activeTabId, { isLoading: true });
+						break;
 					case "stop":
 						webview.stop();
+						window.electron.webview.stopLoading();
 						updateTab(activeTabId, { isLoading: false });
 						break;
 				}
@@ -249,19 +256,6 @@ function Browser() {
 }
 
 export default function App() {
-	// Prevent default context menu
-	useEffect(() => {
-		const handleContextMenu = (e: MouseEvent) => {
-			e.preventDefault();
-			return false;
-		};
-
-		document.addEventListener("contextmenu", handleContextMenu);
-		return () => {
-			document.removeEventListener("contextmenu", handleContextMenu);
-		};
-	}, []);
-
 	return (
 		<Router>
 			<TabsProvider>

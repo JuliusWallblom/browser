@@ -77,7 +77,7 @@ export function TitleBar({
 				onClick={onAddTab}
 				aria-label="New Tab"
 			>
-				<Plus className="!w-5 !h-5" strokeWidth="1" />
+				<Plus className="!w-5 !h-5" strokeWidth="1.5" />
 			</Button>
 			<div className="w-8" />
 			<AITabTrigger />

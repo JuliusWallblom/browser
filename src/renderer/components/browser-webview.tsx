@@ -1,26 +1,12 @@
 import { cn } from "@/lib/utils";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Tab } from "../../types/tab";
-import { WebviewContextMenu } from "./webview-context-menu";
 
 interface WebViewProps {
 	tab: Tab;
 	isActive: boolean;
 	onWebviewRef: (webview: Electron.WebviewTag | null, tabId: string) => void;
 	updateTab: (tabId: string, updates: Partial<Tab>) => void;
-}
-
-interface ContextMenuState {
-	x: number;
-	y: number;
-	linkURL?: string;
-	srcURL?: string;
-	selectionText?: string;
-	isEditable?: boolean;
-}
-
-interface WebviewContextMenuEvent extends Event {
-	params: Electron.ContextMenuParams;
 }
 
 export function WebView({
@@ -33,7 +19,6 @@ export function WebView({
 	const isReadyRef = useRef(false);
 	const initialLoadDoneRef = useRef(false);
 	const isRefreshingRef = useRef(false);
-	const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
 
 	const handleWebviewRef = useCallback(
 		(webview: Electron.WebviewTag | null) => {
@@ -82,7 +67,9 @@ export function WebView({
 				})()
 			`);
 
-			updateTab(tab.id, { favicon: faviconUrl || undefined });
+			updateTab(tab.id, {
+				favicon: typeof faviconUrl === "string" ? faviconUrl : undefined,
+			});
 			return true;
 		} catch (error) {
 			console.error("Error updating favicon:", error);
@@ -276,60 +263,6 @@ export function WebView({
 		};
 	}, [tab.id, tab.url, updateTab, updateNavigationState, updateFavicon]);
 
-	const handleContextMenu = useCallback((e: Event) => {
-		e.preventDefault();
-		const event = e as unknown as { params: Electron.ContextMenuParams };
-		console.log("[WebView] context-menu event:", {
-			x: event.params.x,
-			y: event.params.y,
-			linkURL: event.params.linkURL,
-			srcURL: event.params.srcURL,
-			selectionText: event.params.selectionText,
-			isEditable: event.params.isEditable,
-		});
-
-		// Force close any existing menu first
-		setContextMenu(null);
-
-		// Set timeout to ensure the old menu is closed
-		requestAnimationFrame(() => {
-			setContextMenu({
-				x: event.params.x,
-				y: event.params.y,
-				linkURL: event.params.linkURL,
-				srcURL: event.params.srcURL,
-				selectionText: event.params.selectionText,
-				isEditable: event.params.isEditable,
-			});
-		});
-
-		return false;
-	}, []);
-
-	const handleContextMenuOpenChange = useCallback((open: boolean) => {
-		console.log("[WebView] context menu open change:", { open });
-		if (!open) {
-			setContextMenu(null);
-		}
-	}, []);
-
-	useEffect(() => {
-		const webview = webviewRef.current;
-		if (!webview) return;
-
-		console.log("[WebView] Adding context-menu listener");
-		webview.addEventListener("context-menu", handleContextMenu);
-
-		return () => {
-			console.log("[WebView] Removing context-menu listener");
-			webview.removeEventListener("context-menu", handleContextMenu);
-		};
-	}, [handleContextMenu]);
-
-	useEffect(() => {
-		console.log("[WebView] contextMenu state changed:", contextMenu);
-	}, [contextMenu]);
-
 	return (
 		<>
 			<webview
@@ -345,18 +278,6 @@ export function WebView({
 				httpreferrer="strict-origin-when-cross-origin"
 				useragent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 			/>
-			{contextMenu && (
-				<WebviewContextMenu
-					tabId={tab.id}
-					x={contextMenu.x}
-					y={contextMenu.y}
-					linkURL={contextMenu.linkURL}
-					srcURL={contextMenu.srcURL}
-					selectionText={contextMenu.selectionText}
-					isEditable={contextMenu.isEditable}
-					onOpenChange={handleContextMenuOpenChange}
-				/>
-			)}
 		</>
 	);
 }

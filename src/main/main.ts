@@ -17,6 +17,7 @@ import {
 	protocol,
 	shell,
 	webContents,
+	type MenuItemConstructorOptions,
 } from "electron";
 import log from "electron-log";
 import { autoUpdater } from "electron-updater";
@@ -132,6 +133,9 @@ const createWindow = async () => {
 			webviewTag: true,
 			nodeIntegration: true,
 			contextIsolation: true,
+			webSecurity: true,
+			spellcheck: true,
+			sandbox: false,
 		},
 	});
 
@@ -343,6 +347,122 @@ app
 // Forward keyboard shortcuts from webviews to the main window
 app.on("web-contents-created", (event, contents) => {
 	if (contents.getType() === "webview") {
+		// Handle context menu
+		contents.on("context-menu", (event, params) => {
+			event.preventDefault();
+
+			const template: MenuItemConstructorOptions[] = [];
+
+			// Add link-related items
+			if (params.linkURL) {
+				template.push(
+					{
+						label: "Open Link in New Tab",
+						click: () => {
+							contents.hostWebContents.send(
+								"open-url-in-new-tab",
+								params.linkURL,
+							);
+						},
+					},
+					{
+						label: "Copy Link",
+						click: () => {
+							contents.hostWebContents.send(
+								"copy-to-clipboard",
+								params.linkURL,
+							);
+						},
+					},
+					{ type: "separator" },
+				);
+			}
+
+			// Add text editing items
+			if (params.isEditable) {
+				template.push(
+					{
+						label: "Undo",
+						accelerator: "CmdOrCtrl+Z",
+						role: "undo",
+					},
+					{
+						label: "Redo",
+						accelerator: "CmdOrCtrl+Shift+Z",
+						role: "redo",
+					},
+					{ type: "separator" },
+					{
+						label: "Cut",
+						accelerator: "CmdOrCtrl+X",
+						role: "cut",
+					},
+					{
+						label: "Copy",
+						accelerator: "CmdOrCtrl+C",
+						role: "copy",
+					},
+					{
+						label: "Paste",
+						accelerator: "CmdOrCtrl+V",
+						role: "paste",
+					},
+					{
+						label: "Select All",
+						accelerator: "CmdOrCtrl+A",
+						role: "selectAll",
+					},
+					{ type: "separator" },
+				);
+			} else if (params.selectionText) {
+				template.push(
+					{
+						label: "Copy",
+						accelerator: "CmdOrCtrl+C",
+						role: "copy",
+					},
+					{ type: "separator" },
+				);
+			}
+
+			// Add navigation items
+			template.push(
+				{
+					label: "Back",
+					accelerator: "Alt+Left",
+					enabled: contents.canGoBack(),
+					click: () => contents.goBack(),
+				},
+				{
+					label: "Forward",
+					accelerator: "Alt+Right",
+					enabled: contents.canGoForward(),
+					click: () => contents.goForward(),
+				},
+				{
+					label: "Reload",
+					accelerator: "CmdOrCtrl+R",
+					click: () => contents.reload(),
+				},
+			);
+
+			// Add developer tools in development mode
+			if (process.env.NODE_ENV === "development") {
+				template.push(
+					{ type: "separator" },
+					{
+						label: "Inspect Element",
+						click: () => contents.inspectElement(params.x, params.y),
+					},
+				);
+			}
+
+			Menu.buildFromTemplate(template).popup();
+		});
+
+		// Set webview preferences
+		contents.setWindowOpenHandler(() => ({ action: "allow" }));
+
 		contents.on("before-input-event", (event, input) => {
 			// Only handle keyboard events with modifier keys
 			if (input.type === "keyDown" && (input.meta || input.control)) {
@@ -382,3 +502,91 @@ app.on("web-contents-created", (event, contents) => {
 		});
 	}
 });
+
+// Add this before app.on("web-contents-created", ...)
+ipcMain.on(
+	"navigation-context-menu",
+	(
+		event,
+		type: "back" | "forward" | "refresh",
+		params: { canGoBack: boolean; canGoForward: boolean; isLoading: boolean },
+	) => {
+		const window = BrowserWindow.fromWebContents(event.sender);
+		if (!window) return;
+
+		const template: MenuItemConstructorOptions[] = [];
+
+		if (type === "back") {
+			template.push(
+				{
+					label: "Back",
+					accelerator: "Alt+Left",
+					enabled: params.canGoBack,
+					click: () => {
+						event.sender.send("navigation-action", "back");
+					},
+				},
+				{
+					label: "Forward",
+					accelerator: "Alt+Right",
+					enabled: params.canGoForward,
+					click: () => {
+						event.sender.send("navigation-action", "forward");
+					},
+				},
+			);
+		} else if (type === "forward") {
+			template.push(
+				{
+					label: "Forward",
+					accelerator: "Alt+Right",
+					enabled: params.canGoForward,
+					click: () => {
+						event.sender.send("navigation-action", "forward");
+					},
+				},
+				{
+					label: "Back",
+					accelerator: "Alt+Left",
+					enabled: params.canGoBack,
+					click: () => {
+						event.sender.send("navigation-action", "back");
+					},
+				},
+			);
+		} else if (type === "refresh") {
+			template.push(
+				{
+					label: params.isLoading ? "Stop" : "Reload",
+					accelerator: "CmdOrCtrl+R",
+					click: () => {
+						if (params.isLoading) {
+							event.sender.send("navigation-action", "stop");
+						} else {
+							event.sender.send("navigation-action", "refresh");
+						}
+					},
+				},
+				{
+					label: "Force Reload",
+					accelerator: "CmdOrCtrl+Shift+R",
+					click: () => {
+						event.sender.send("navigation-action", "force-refresh");
+					},
+				},
+			);
+		}
+
+		if (process.env.NODE_ENV === "development") {
+			template.push(
+				{ type: "separator" },
+				{
+					label: "Inspect Element",
+					click: () => event.sender.inspectElement(0, 0),
+				},
+			);
+		}
+
+		Menu.buildFromTemplate(template).popup({ window });
+	},
+);

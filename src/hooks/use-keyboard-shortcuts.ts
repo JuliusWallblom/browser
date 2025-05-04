@@ -5,7 +5,8 @@ type ShortcutCommand =
 	| "closeTab"
 	| "nextTab"
 	| "previousTab"
-	| "focusUrlBar";
+	| "focusUrlBar"
+	| "toggleStreamsTab";
 
 interface ShortcutHandler {
 	command: ShortcutCommand;
@@ -46,13 +47,15 @@ export function useKeyboardShortcuts(handlers: ShortcutHandler[]) {
 
 			// Check if this is one of our custom shortcuts
 			const key = event.key.toLowerCase();
-			const customShortcuts = ["t", "w", "[", "]", "l"];
+			const customShortcuts = ["t", "w", "[", "]", "l", "e"];
 			const isCustomShortcut = customShortcuts.includes(key);
 
 			if (!isCustomShortcut) {
 				console.log(
 					"[use-keyboard-shortcuts] Not a custom shortcut, ignoring:",
 					key,
+					"Custom shortcuts are:",
+					customShortcuts,
 				);
 				return;
 			}
@@ -68,11 +71,17 @@ export function useKeyboardShortcuts(handlers: ShortcutHandler[]) {
 
 				console.log("[use-keyboard-shortcuts] Checking shortcut match:", {
 					command: handler.command,
+					key: handler.key,
+					eventKey: event.key,
 					matchesKey,
 					matchesMetaKey,
 					matchesCtrlKey,
 					matchesAltKey,
 					matchesShiftKey,
+					handlerMetaKey: handler.metaKey,
+					handlerCtrlKey: handler.ctrlKey,
+					eventMetaKey: event.metaKey,
+					eventCtrlKey: event.ctrlKey,
 				});
 
 				if (
@@ -125,6 +134,11 @@ export const SHORTCUTS = {
 	FOCUS_URL_BAR: {
 		command: "focusUrlBar" as ShortcutCommand,
 		key: "l",
+		[modifierKey]: true,
+	},
+	TOGGLE_STREAMS_TAB: {
+		command: "toggleStreamsTab" as ShortcutCommand,
+		key: "e",
 		[modifierKey]: true,
 	},
 };
