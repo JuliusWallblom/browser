@@ -100,26 +100,30 @@ function Browser() {
 			e.preventDefault();
 			if (!activeTabId) return;
 
-			const input = currentUrl.trim();
+			// Get the input value from the form event
+			const input = (e.target as HTMLFormElement)
+				?.elements?.[0] as HTMLInputElement;
+			const value = input?.value || currentUrl;
+			const trimmedInput = value.trim();
 
 			// Special handling for empty input - load about:blank
-			if (!input) {
+			if (!trimmedInput) {
 				updateTab(activeTabId, { url: "about:blank", isLoading: false });
 				return;
 			}
 
 			// Check if input is a URL or search term
 			const isUrl =
-				/^[a-zA-Z]+:\/\//.test(input) || // Has protocol
-				/^[\w-]+\.([\w-]+\.)*[\w-]+$/.test(input) || // Domain name pattern
-				/^localhost(:\d+)?$/.test(input); // Localhost
+				/^[a-zA-Z]+:\/\//.test(trimmedInput) || // Has protocol
+				/^[\w-]+\.([\w-]+\.)*[\w-]+$/.test(trimmedInput) || // Domain name pattern
+				/^localhost(:\d+)?$/.test(trimmedInput); // Localhost
 
 			// Create the URL to load
 			const urlToLoad = isUrl
-				? !input.includes("://")
-					? `https://${input}`
-					: input
-				: `https://www.google.com/search?q=${encodeURIComponent(input)}`;
+				? !trimmedInput.includes("://")
+					? `https://${trimmedInput}`
+					: trimmedInput
+				: `https://www.google.com/search?q=${encodeURIComponent(trimmedInput)}`;
 
 			updateTab(activeTabId, { url: urlToLoad, isLoading: true });
 

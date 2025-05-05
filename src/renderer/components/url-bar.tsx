@@ -1,8 +1,39 @@
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { Globe, Loader2, Settings } from "lucide-react";
+import { historyService } from "@/lib/history";
+import { Globe, Loader2, Settings, Search } from "lucide-react";
 import { type RefObject, useEffect, useRef, useState } from "react";
 import { ErrorFavicon } from "./error-favicon";
+
+// Helper function to check if string ends with a domain extension
+const endsWithDomainExtension = (input: string) => {
+	// Match a dot followed by 2 or more letters at the end of the string
+	// This covers all TLDs (Top Level Domains)
+	const domainPattern = /\.[a-zA-Z]{2,}$/;
+	return domainPattern.test(input.toLowerCase().trim());
+};
+
+// Helper function to check if URL is a Google search
+const isGoogleSearch = (url: string) => {
+	try {
+		const urlObj = new URL(url);
+		return urlObj.hostname.includes("google.") && urlObj.pathname === "/search";
+	} catch {
+		return false;
+	}
+};
+
+// Helper function to check if input looks like a URL
+const looksLikeUrl = (input: string) => {
+	const cleanInput = input.toLowerCase().trim();
+	// Check for protocol
+	if (cleanInput.startsWith("http://") || cleanInput.startsWith("https://"))
+		return true;
+
+	// Check for common URL patterns
+	const urlPattern = /^([a-z0-9-]+\.)+[a-z]{2,}(\/|$)/;
+	return urlPattern.test(cleanInput);
+};
 
 interface URLBarProps {
 	url: string;
@@ -15,6 +46,24 @@ interface URLBarProps {
 	shouldFocusAndSelect?: boolean;
 	isError?: boolean;
 }
+
+interface Suggestion {
+	url: string;
+	title: string;
+	subtitle: string;
+	favicon?: string;
+}
+
+// Helper function to sort suggestions with Google searches first
+const sortSuggestions = (suggestions: Suggestion[]) => {
+	return [...suggestions].sort((a, b) => {
+		const aIsGoogle = isGoogleSearch(a.url);
+		const bIsGoogle = isGoogleSearch(b.url);
+		if (aIsGoogle && !bIsGoogle) return -1;
+		if (!aIsGoogle && bIsGoogle) return 1;
+		return 0;
+	});
+};
 
 export function URLBar({
 	url,
@@ -33,6 +82,11 @@ export function URLBar({
 	const [isFocused, setIsFocused] = useState(false);
 	const [inputValue, setInputValue] = useState(url);
 	const [isFaviconLoading, setIsFaviconLoading] = useState(false);
+	const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+	const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
+	const [hoveredUrl, setHoveredUrl] = useState<string | null>(null);
+	const [isHovering, setIsHovering] = useState(false);
+	const [hasMouseMoved, setHasMouseMoved] = useState(false);
 
 	const inputRef = externalRef || internalRef;
 
@@ -113,9 +167,59 @@ export function URLBar({
 		}
 	}, [favicon]);
 
+	// Update suggestions when input changes
+	useEffect(() => {
+		const updateSuggestions = async () => {
+			if (!isEditing || !inputValue.trim()) {
+				setSuggestions([]);
+				return;
+			}
+
+			const results = await historyService.searchHistory(inputValue);
+			const defaultSearch = {
+				url: `https://www.google.com/search?q=${encodeURIComponent(inputValue)}`,
+				title: inputValue,
+				subtitle: " - Google Search",
+				favicon: "https://www.google.com/favicon.ico",
+			};
+
+			// Filter out the current URL and normalize URLs for comparison
+			const normalizeUrl = (url: string) => {
+				try {
+					const urlObj = new URL(url.toLowerCase());
+					return `${urlObj.protocol}//${urlObj.host}${urlObj.pathname}${urlObj.search}`;
+				} catch {
+					return url.toLowerCase();
+				}
+			};
+
+			const currentNormalizedUrl = normalizeUrl(url);
+			const filteredResults = results.filter(
+				(result) => normalizeUrl(result.url) !== currentNormalizedUrl,
+			);
+
+			// Only include Google Search if input doesn't look like a URL
+			setSuggestions(
+				sortSuggestions(
+					looksLikeUrl(inputValue)
+						? filteredResults
+						: [defaultSearch, ...filteredResults],
+				),
+			);
+		};
+
+		updateSuggestions();
+	}, [inputValue, isEditing, url]);
+
+	useEffect(() => {
+		// Reset mouse movement flag when suggestions change
+		setHasMouseMoved(false);
+	}, []);
+
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		setIsEditing(false);
+		setSuggestions([]);
 		onSubmit(e);
 		// Blur after a small delay to prevent the about:blank flash
 		setTimeout(() => {
@@ -127,13 +231,51 @@ export function URLBar({
 		const newValue = e.target.value;
 		setInputValue(newValue);
 		onChange(newValue);
+		setSelectedSuggestionIndex(-1);
+		// Reset hover states when typing
+		setHoveredUrl(null);
+		setHasMouseMoved(false);
 	};
 
-	const handleMouseDown = () => {
+	const handleMouseDown = async () => {
 		wasClickedRef.current = true;
+
+		// Update suggestions if there's input value
+		if (inputValue.trim()) {
+			const results = await historyService.searchHistory(inputValue);
+			const defaultSearch = {
+				url: `https://www.google.com/search?q=${encodeURIComponent(inputValue)}`,
+				title: inputValue,
+				subtitle: " - Google Search",
+				favicon: "https://www.google.com/favicon.ico",
+			};
+
+			// Filter out the current URL and normalize URLs for comparison
+			const normalizeUrl = (url: string) => {
+				try {
+					const urlObj = new URL(url.toLowerCase());
+					return `${urlObj.protocol}//${urlObj.host}${urlObj.pathname}${urlObj.search}`;
+				} catch {
+					return url.toLowerCase();
+				}
+			};
+
+			const currentNormalizedUrl = normalizeUrl(url);
+			const filteredResults = results.filter(
+				(result) => normalizeUrl(result.url) !== currentNormalizedUrl,
+			);
+
+			setSuggestions(
+				sortSuggestions(
+					looksLikeUrl(inputValue)
+						? filteredResults
+						: [defaultSearch, ...filteredResults],
+				),
+			);
+		}
 	};
 
-	const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+	const handleFocus = async (e: React.FocusEvent<HTMLInputElement>) => {
 		setIsEditing(true);
 		setIsFocused(true);
 		// Always select all text for blank pages, otherwise only select if not clicked directly
@@ -144,16 +286,151 @@ export function URLBar({
 			}, 0);
 		}
 		wasClickedRef.current = false;
+
+		// Update suggestions if there's input value
+		if (inputValue.trim()) {
+			const results = await historyService.searchHistory(inputValue);
+			const defaultSearch = {
+				url: `https://www.google.com/search?q=${encodeURIComponent(inputValue)}`,
+				title: inputValue,
+				subtitle: " - Google Search",
+				favicon: "https://www.google.com/favicon.ico",
+			};
+
+			// Filter out the current URL and normalize URLs for comparison
+			const normalizeUrl = (url: string) => {
+				try {
+					const urlObj = new URL(url.toLowerCase());
+					return `${urlObj.protocol}//${urlObj.host}${urlObj.pathname}${urlObj.search}`;
+				} catch {
+					return url.toLowerCase();
+				}
+			};
+
+			const currentNormalizedUrl = normalizeUrl(url);
+			const filteredResults = results.filter(
+				(result) => normalizeUrl(result.url) !== currentNormalizedUrl,
+			);
+
+			setSuggestions(
+				sortSuggestions(
+					looksLikeUrl(inputValue)
+						? filteredResults
+						: [defaultSearch, ...filteredResults],
+				),
+			);
+		}
 	};
 
 	const handleBlur = () => {
 		setIsEditing(false);
 		setIsFocused(false);
 		wasClickedRef.current = false;
+		// Only hide suggestions if we're not hovering over them
+		if (!isHovering) {
+			setSuggestions([]);
+		}
+		setHoveredUrl(null);
 		// Only revert if the URL is different, we're not submitting, and not loading
 		if (inputValue !== url && !isLoading) {
 			setInputValue(url);
 			onChange(url);
+		}
+	};
+
+	const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+		if (e.key === "Escape") {
+			setSuggestions([]);
+			return;
+		}
+
+		if (suggestions.length === 0) return;
+
+		if (e.key === "ArrowDown") {
+			e.preventDefault();
+			setHasMouseMoved(true);
+			setSelectedSuggestionIndex((prev) =>
+				prev < suggestions.length - 1 ? prev + 1 : prev,
+			);
+			// Update input value to show selected suggestion
+			if (selectedSuggestionIndex + 1 < suggestions.length) {
+				const selected = suggestions[selectedSuggestionIndex + 1];
+				setHoveredUrl(selected.url);
+			}
+		} else if (e.key === "ArrowUp") {
+			e.preventDefault();
+			setHasMouseMoved(true);
+			setSelectedSuggestionIndex((prev) => (prev > -1 ? prev - 1 : -1));
+			// Update input value to show selected suggestion or restore original input
+			if (selectedSuggestionIndex - 1 >= 0) {
+				const selected = suggestions[selectedSuggestionIndex - 1];
+				setHoveredUrl(selected.url);
+			} else {
+				setHoveredUrl(null);
+				setHasMouseMoved(false);
+			}
+		} else if (e.key === "Enter" && selectedSuggestionIndex >= 0) {
+			e.preventDefault();
+			const selected = suggestions[selectedSuggestionIndex];
+			handleSuggestionClick(selected);
+		}
+	};
+
+	const handleSuggestionClick = (suggestion: Suggestion) => {
+		setInputValue(suggestion.url);
+		onChange(suggestion.url);
+		// Create a form submit event
+		const form = document.createElement("form");
+		const input = document.createElement("input");
+		input.value = suggestion.url;
+		form.appendChild(input);
+		const submitEvent = new Event("submit", {
+			bubbles: true,
+			cancelable: true,
+		}) as unknown as React.FormEvent;
+		Object.defineProperty(submitEvent, "target", { value: form });
+		handleSubmit(submitEvent);
+	};
+
+	const handleSuggestionMouseEnter = (suggestion: Suggestion) => {
+		if (hasMouseMoved) {
+			setHoveredUrl(suggestion.url);
+			setIsHovering(true);
+		}
+	};
+
+	const handleSuggestionMouseMove = (suggestion: Suggestion) => {
+		setHasMouseMoved(true);
+		setHoveredUrl(suggestion.url);
+		setIsHovering(true);
+	};
+
+	const handleSuggestionMouseLeave = () => {
+		setHoveredUrl(null);
+		setIsHovering(false);
+		// Hide suggestions if we're not focused
+		if (!isFocused) {
+			setSuggestions([]);
+		}
+	};
+
+	const handleSuggestionsMouseEnter = () => {
+		if (hasMouseMoved) {
+			setIsHovering(true);
+		}
+	};
+
+	const handleSuggestionsMouseMove = () => {
+		setHasMouseMoved(true);
+		setIsHovering(true);
+	};
+
+	const handleSuggestionsMouseLeave = () => {
+		setIsHovering(false);
+		setHasMouseMoved(false);
+		// Hide suggestions if we're not focused
+		if (!isFocused) {
+			setSuggestions([]);
 		}
 	};
 
@@ -183,12 +460,12 @@ export function URLBar({
 	return (
 		<form
 			onSubmit={handleSubmit}
-			className={cn("flex-1 flex items-center non-draggable")}
+			className={cn("flex-1 flex items-center non-draggable relative w-full")}
 		>
 			<div className="flex-1 relative h-7">
 				<div
 					className={cn(
-						"absolute left-1.5 top-1/2 -translate-y-1/2 w-4 h-4 z-10",
+						"absolute left-1.5 top-1/2 -translate-y-1/2 w-4 h-4 z-40",
 					)}
 				>
 					{getIcon()}
@@ -196,14 +473,62 @@ export function URLBar({
 				<Input
 					ref={inputRef}
 					type="text"
-					value={inputValue}
+					name="url"
+					value={hasMouseMoved ? hoveredUrl || inputValue : inputValue}
 					onChange={handleChange}
 					onFocus={handleFocus}
 					onBlur={handleBlur}
 					onMouseDown={handleMouseDown}
-					className="w-full h-full pl-7 pr-2 rounded-full text-sm bg-muted border-none"
+					onKeyDown={handleKeyDown}
+					className="relative w-full h-full pl-7 pr-2 rounded-full text-sm bg-muted border-none z-30"
 					placeholder="Search or enter URL"
 				/>
+				{suggestions.length > 0 && (
+					<div
+						className="-mt-8 absolute top-full left-0 right-0 mt-1 bg-background border rounded-lg rounded-t-none shadow-lg overflow-hidden z-10"
+						onMouseEnter={handleSuggestionsMouseEnter}
+						onMouseMove={handleSuggestionsMouseMove}
+						onMouseLeave={handleSuggestionsMouseLeave}
+					>
+						{suggestions.map((suggestion, index) => (
+							<button
+								key={suggestion.url}
+								type="button"
+								className={cn(
+									"w-full px-3 py-3 flex items-start gap-3 hover:bg-muted text-left",
+									index === selectedSuggestionIndex && "bg-muted",
+									suggestions.indexOf(suggestion) === 0 && "pt-[46px]",
+								)}
+								onMouseDown={(e) => e.preventDefault()}
+								onClick={() => handleSuggestionClick(suggestion)}
+								onMouseEnter={() => handleSuggestionMouseEnter(suggestion)}
+								onMouseMove={() => handleSuggestionMouseMove(suggestion)}
+								onMouseLeave={handleSuggestionMouseLeave}
+							>
+								{isGoogleSearch(suggestion.url) ? (
+									<Search className="w-4 h-4 text-muted-foreground" />
+								) : suggestion.favicon ? (
+									<img src={suggestion.favicon} alt="" className="w-4 h-4" />
+								) : (
+									<Globe className="w-4 h-4 text-muted-foreground" />
+								)}
+								<div className="flex-1 min-w-0">
+									<div className="font-medium truncate text-sm">
+										{isGoogleSearch(suggestion.url)
+											? suggestion.title.split(" - ")[0]
+											: suggestion.title}
+										<span className="font-normal text-muted-foreground">
+											{suggestion.subtitle ||
+												(isGoogleSearch(suggestion.url)
+													? " - Google Search"
+													: "")}
+										</span>
+									</div>
+								</div>
+							</button>
+						))}
+					</div>
+				)}
 			</div>
 		</form>
 	);

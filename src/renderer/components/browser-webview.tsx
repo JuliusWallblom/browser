@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { historyService } from "@/lib/history";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Tab } from "../../types/tab";
 import { ErrorPage } from "./error-page";
@@ -53,33 +54,41 @@ export function WebView({
 					// Try to find favicon from link elements
 					const icons = Array.from(document.querySelectorAll('link[rel*="icon"]'));
 					
-					// If no icons found, try Google's special format
-					if (icons.length === 0) {
-						const domain = window.location.hostname;
-						return domain ? 'https://www.google.com/s2/favicons?domain=' + domain : null;
-					}
-					
 					// Sort by size preference if specified
 					const sortedIcons = icons.sort((a, b) => {
 						const sizeA = parseInt(a.getAttribute('sizes')?.split('x')[0] || '0');
 						const sizeB = parseInt(b.getAttribute('sizes')?.split('x')[0] || '0');
 						return sizeB - sizeA;
 					});
+
+					// Get the best icon or fall back to Google's favicon service
+					const bestIcon = sortedIcons[0]?.href;
+					if (bestIcon) {
+						return new URL(bestIcon, window.location.href).href;
+					}
 					
-					return sortedIcons[0].href;
+					// If no icons found, use Google's favicon service
+					return window.location.hostname ? 'https://www.google.com/s2/favicons?sz=32&domain=' + window.location.hostname : null;
 				})()
 			`);
 
-			updateTab(tab.id, {
-				favicon: typeof faviconUrl === "string" ? faviconUrl : undefined,
-			});
-			return true;
+			if (typeof faviconUrl === "string") {
+				updateTab(tab.id, { favicon: faviconUrl });
+				// Also update history entry with the new favicon
+				const url = webview.getURL();
+				if (url && url !== "about:blank") {
+					historyService.addVisit(url, tab.title || url, faviconUrl);
+				}
+				return true;
+			}
+			updateTab(tab.id, { favicon: undefined });
+			return false;
 		} catch (error) {
 			console.error("Error updating favicon:", error);
 			updateTab(tab.id, { favicon: undefined });
 			return false;
 		}
-	}, [tab.id, updateTab]);
+	}, [tab.id, tab.title, updateTab]);
 
 	// Effect to track refresh state
 	useEffect(() => {
@@ -119,14 +128,11 @@ export function WebView({
 				isRefreshing: isRefreshingRef.current,
 			});
 
-			// Show loading state for initial load or refresh, but not for about:blank
-			if (
-				(!initialLoadDoneRef.current || isRefreshingRef.current) &&
-				currentUrl !== "about:blank"
-			) {
+			// Show loading state for initial load or refresh
+			if (!initialLoadDoneRef.current || isRefreshingRef.current) {
 				updateTab(tab.id, {
 					isLoading: true,
-					isError: false, // Clear error state when starting to load
+					isError: false,
 				});
 			}
 		};
@@ -143,18 +149,22 @@ export function WebView({
 				isRefreshing: isRefreshingRef.current,
 			});
 
-			// Update loading state for initial load or refresh, but not for about:blank
-			if (
-				(!initialLoadDoneRef.current || isRefreshingRef.current) &&
-				currentUrl !== "about:blank"
-			) {
-				if (isReadyRef.current) {
-					updateNavigationState();
-					// Try to update favicon before marking as done loading
+			// Always update loading state when stopping
+			if (isReadyRef.current) {
+				updateNavigationState();
+				// Try to update favicon before marking as done loading
+				if (currentUrl !== "about:blank") {
 					await updateFavicon();
 				}
-				updateTab(tab.id, { isLoading: false });
 			}
+
+			updateTab(tab.id, {
+				isLoading: false,
+				...(currentUrl === "about:blank" && {
+					favicon: undefined,
+					title: "New Tab",
+				}),
+			});
 
 			initialLoadDoneRef.current = true;
 			isRefreshingRef.current = false;
@@ -172,18 +182,27 @@ export function WebView({
 				isRefreshing: isRefreshingRef.current,
 			});
 
-			// Always update URL, even for about:blank
+			// Don't update URL if it's about:blank during navigation
+			if (event.url === "about:blank" && !initialLoadDoneRef.current) {
+				updateTab(tab.id, {
+					isLoading: true,
+					isError: false,
+				});
+				return;
+			}
+
+			// Always update URL and clear error state
 			updateTab(tab.id, {
 				url: event.url,
-				// Clear error state and favicon/title when navigating
 				isError: false,
+				isLoading: event.url !== "about:blank",
 				...(event.url === "about:blank" && {
 					favicon: undefined,
 					title: "New Tab",
 				}),
 			});
 
-			// Reset initial load state on actual navigation
+			// Reset states
 			initialLoadDoneRef.current = false;
 			setErrorEvent(null);
 			if (isReadyRef.current) {
@@ -198,6 +217,12 @@ export function WebView({
 			});
 
 			updateTab(tab.id, { title: event.title });
+
+			// Add to history when title is updated
+			const url = webview.getURL();
+			if (url && url !== "about:blank") {
+				historyService.addVisit(url, event.title, tab.favicon);
+			}
 		};
 
 		const handleDidNavigateInPage = (
@@ -278,7 +303,14 @@ export function WebView({
 			webview.removeEventListener("did-fail-load", handleDidFailLoad);
 			webview.removeEventListener("page-title-updated", handlePageTitleUpdated);
 		};
-	}, [tab.id, tab.url, updateTab, updateNavigationState, updateFavicon]);
+	}, [
+		tab.id,
+		tab.url,
+		tab.favicon,
+		updateTab,
+		updateNavigationState,
+		updateFavicon,
+	]);
 
 	useEffect(() => {
 		const webview = webviewRef.current;

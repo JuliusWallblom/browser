@@ -54,10 +54,10 @@ export function TitleBar({
 	return (
 		<div
 			className={cn(
-				"h-10 flex items-center gap-2 px-2 bg-background draggable",
+				"h-10 flex items-center justify-start gap-2 px-2 bg-background draggable",
 			)}
 		>
-			<div className="w-[65px]" />
+			<div className="w-[65px] shrink-0" />
 			<StreamsTabTrigger />
 			<NavigationControls
 				onNavigate={onNavigate}
@@ -67,27 +67,29 @@ export function TitleBar({
 				url={url}
 				activeUrl={activeUrl}
 			/>
-			<URLBar
-				url={url}
-				favicon={favicon}
-				isLoading={isLoading}
-				currentView={currentView}
-				onChange={onUrlChange}
-				onSubmit={onUrlSubmit}
-				urlInputRef={urlInputRef}
-				shouldFocusAndSelect={shouldFocusAndSelect}
-				isError={isError}
-			/>
-			<Button
-				variant="ghost"
-				size="icon"
-				className="h-6 w-6 p-1 rounded-full non-draggable"
-				onClick={onAddTab}
-				aria-label="New Tab"
-			>
-				<Plus className="!w-5 !h-5" strokeWidth="1.5" />
-			</Button>
-			<div className="w-8" />
+			<div className="flex items-center gap-2 w-full min-w-[146px]">
+				<URLBar
+					url={url}
+					favicon={favicon}
+					isLoading={isLoading}
+					currentView={currentView}
+					onChange={onUrlChange}
+					onSubmit={onUrlSubmit}
+					urlInputRef={urlInputRef}
+					shouldFocusAndSelect={shouldFocusAndSelect}
+					isError={isError}
+				/>
+				<Button
+					variant="ghost"
+					size="icon"
+					className="h-6 w-6 p-1 rounded-full non-draggable"
+					onClick={onAddTab}
+					aria-label="New Tab"
+				>
+					<Plus className="!w-5 !h-5" strokeWidth="1.5" />
+				</Button>
+			</div>
+			<div className="w-[20%]" />
 			<AITabTrigger />
 			<SettingsMenu onViewChange={onViewChange} onUrlChange={onUrlChange} />
 		</div>
