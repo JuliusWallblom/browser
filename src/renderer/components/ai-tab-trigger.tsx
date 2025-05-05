@@ -1,25 +1,26 @@
 import { Button } from "@/components/ui/button";
 import { usePanels } from "@/hooks/use-panels";
 import { cn } from "@/lib/utils";
-import { WandSparkles } from "lucide-react";
+import { Bot, BotMessageSquare, WandSparkles } from "lucide-react";
 
 export function AITabTrigger() {
 	const { isRightPanelOpen, toggleRightPanel } = usePanels();
 
 	return (
 		<Button
+			disabled
 			variant="ghost"
 			size="icon"
 			type="button"
 			onClick={toggleRightPanel}
 			className={cn(
-				"hidden h-auto w-auto p-1 rounded-full non-draggable",
+				"h-auto w-auto p-1 rounded-full non-draggable",
 				"text-muted-foreground",
 				isRightPanelOpen && "text-primary",
 			)}
 			aria-label={isRightPanelOpen ? "Close AI assistant" : "Open AI assistant"}
 		>
-			<WandSparkles size="16" />
+			<BotMessageSquare className="!w-4 !h-4" />
 		</Button>
 	);
 }

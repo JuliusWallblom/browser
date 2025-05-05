@@ -4,6 +4,7 @@ import { historyService } from "@/lib/history";
 import { Globe, Loader2, Settings, Search } from "lucide-react";
 import { type RefObject, useEffect, useRef, useState } from "react";
 import { ErrorFavicon } from "./error-favicon";
+import { URLSuggestions, type Suggestion } from "./url-suggestions";
 
 // Helper function to check if string ends with a domain extension
 const endsWithDomainExtension = (input: string) => {
@@ -45,13 +46,6 @@ interface URLBarProps {
 	urlInputRef?: RefObject<HTMLInputElement | null>;
 	shouldFocusAndSelect?: boolean;
 	isError?: boolean;
-}
-
-interface Suggestion {
-	url: string;
-	title: string;
-	subtitle: string;
-	favicon?: string;
 }
 
 // Helper function to sort suggestions with Google searches first
@@ -239,40 +233,7 @@ export function URLBar({
 
 	const handleMouseDown = async () => {
 		wasClickedRef.current = true;
-
-		// Update suggestions if there's input value
-		if (inputValue.trim()) {
-			const results = await historyService.searchHistory(inputValue);
-			const defaultSearch = {
-				url: `https://www.google.com/search?q=${encodeURIComponent(inputValue)}`,
-				title: inputValue,
-				subtitle: " - Google Search",
-				favicon: "https://www.google.com/favicon.ico",
-			};
-
-			// Filter out the current URL and normalize URLs for comparison
-			const normalizeUrl = (url: string) => {
-				try {
-					const urlObj = new URL(url.toLowerCase());
-					return `${urlObj.protocol}//${urlObj.host}${urlObj.pathname}${urlObj.search}`;
-				} catch {
-					return url.toLowerCase();
-				}
-			};
-
-			const currentNormalizedUrl = normalizeUrl(url);
-			const filteredResults = results.filter(
-				(result) => normalizeUrl(result.url) !== currentNormalizedUrl,
-			);
-
-			setSuggestions(
-				sortSuggestions(
-					looksLikeUrl(inputValue)
-						? filteredResults
-						: [defaultSearch, ...filteredResults],
-				),
-			);
-		}
+		await updateSuggestions();
 	};
 
 	const handleFocus = async (e: React.FocusEvent<HTMLInputElement>) => {
@@ -286,40 +247,7 @@ export function URLBar({
 			}, 0);
 		}
 		wasClickedRef.current = false;
-
-		// Update suggestions if there's input value
-		if (inputValue.trim()) {
-			const results = await historyService.searchHistory(inputValue);
-			const defaultSearch = {
-				url: `https://www.google.com/search?q=${encodeURIComponent(inputValue)}`,
-				title: inputValue,
-				subtitle: " - Google Search",
-				favicon: "https://www.google.com/favicon.ico",
-			};
-
-			// Filter out the current URL and normalize URLs for comparison
-			const normalizeUrl = (url: string) => {
-				try {
-					const urlObj = new URL(url.toLowerCase());
-					return `${urlObj.protocol}//${urlObj.host}${urlObj.pathname}${urlObj.search}`;
-				} catch {
-					return url.toLowerCase();
-				}
-			};
-
-			const currentNormalizedUrl = normalizeUrl(url);
-			const filteredResults = results.filter(
-				(result) => normalizeUrl(result.url) !== currentNormalizedUrl,
-			);
-
-			setSuggestions(
-				sortSuggestions(
-					looksLikeUrl(inputValue)
-						? filteredResults
-						: [defaultSearch, ...filteredResults],
-				),
-			);
-		}
+		await updateSuggestions();
 	};
 
 	const handleBlur = () => {
@@ -434,6 +362,44 @@ export function URLBar({
 		}
 	};
 
+	const updateSuggestions = async () => {
+		if (!isEditing || !inputValue.trim()) {
+			setSuggestions([]);
+			return;
+		}
+
+		const results = await historyService.searchHistory(inputValue);
+		const defaultSearch = {
+			url: `https://www.google.com/search?q=${encodeURIComponent(inputValue)}`,
+			title: inputValue,
+			subtitle: " - Google Search",
+			favicon: "https://www.google.com/favicon.ico",
+		};
+
+		// Filter out the current URL and normalize URLs for comparison
+		const normalizeUrl = (url: string) => {
+			try {
+				const urlObj = new URL(url.toLowerCase());
+				return `${urlObj.protocol}//${urlObj.host}${urlObj.pathname}${urlObj.search}`;
+			} catch {
+				return url.toLowerCase();
+			}
+		};
+
+		const currentNormalizedUrl = normalizeUrl(url);
+		const filteredResults = results.filter(
+			(result) => normalizeUrl(result.url) !== currentNormalizedUrl,
+		);
+
+		setSuggestions(
+			sortSuggestions(
+				looksLikeUrl(inputValue)
+					? filteredResults
+					: [defaultSearch, ...filteredResults],
+			),
+		);
+	};
+
 	const getIcon = () => {
 		if (inputValue !== "about:blank" && (isLoading || isFaviconLoading)) {
 			return (
@@ -483,52 +449,20 @@ export function URLBar({
 					className="relative w-full h-full pl-7 pr-2 rounded-full text-sm bg-muted border-none z-30"
 					placeholder="Search or enter URL"
 				/>
-				{suggestions.length > 0 && (
-					<div
-						className="-mt-8 absolute top-full left-0 right-0 mt-1 bg-background border rounded-lg rounded-t-none shadow-lg overflow-hidden z-10"
-						onMouseEnter={handleSuggestionsMouseEnter}
-						onMouseMove={handleSuggestionsMouseMove}
-						onMouseLeave={handleSuggestionsMouseLeave}
-					>
-						{suggestions.map((suggestion, index) => (
-							<button
-								key={suggestion.url}
-								type="button"
-								className={cn(
-									"w-full px-3 py-3 flex items-start gap-3 hover:bg-muted text-left",
-									index === selectedSuggestionIndex && "bg-muted",
-									suggestions.indexOf(suggestion) === 0 && "pt-[46px]",
-								)}
-								onMouseDown={(e) => e.preventDefault()}
-								onClick={() => handleSuggestionClick(suggestion)}
-								onMouseEnter={() => handleSuggestionMouseEnter(suggestion)}
-								onMouseMove={() => handleSuggestionMouseMove(suggestion)}
-								onMouseLeave={handleSuggestionMouseLeave}
-							>
-								{isGoogleSearch(suggestion.url) ? (
-									<Search className="w-4 h-4 text-muted-foreground" />
-								) : suggestion.favicon ? (
-									<img src={suggestion.favicon} alt="" className="w-4 h-4" />
-								) : (
-									<Globe className="w-4 h-4 text-muted-foreground" />
-								)}
-								<div className="flex-1 min-w-0">
-									<div className="font-medium truncate text-sm">
-										{isGoogleSearch(suggestion.url)
-											? suggestion.title.split(" - ")[0]
-											: suggestion.title}
-										<span className="font-normal text-muted-foreground">
-											{suggestion.subtitle ||
-												(isGoogleSearch(suggestion.url)
-													? " - Google Search"
-													: "")}
-										</span>
-									</div>
-								</div>
-							</button>
-						))}
-					</div>
-				)}
+				<URLSuggestions
+					suggestions={suggestions}
+					selectedSuggestionIndex={selectedSuggestionIndex}
+					hasMouseMoved={hasMouseMoved}
+					isHovering={isHovering}
+					hoveredUrl={hoveredUrl}
+					onSuggestionClick={handleSuggestionClick}
+					onSuggestionMouseEnter={handleSuggestionMouseEnter}
+					onSuggestionMouseMove={handleSuggestionMouseMove}
+					onSuggestionMouseLeave={handleSuggestionMouseLeave}
+					onSuggestionsMouseEnter={handleSuggestionsMouseEnter}
+					onSuggestionsMouseMove={handleSuggestionsMouseMove}
+					onSuggestionsMouseLeave={handleSuggestionsMouseLeave}
+				/>
 			</div>
 		</form>
 	);

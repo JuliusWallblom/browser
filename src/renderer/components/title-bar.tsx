@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Plus } from "lucide-react";
+import { CircleFadingPlus, Plus } from "lucide-react";
 import type { RefObject } from "react";
 import { AITabTrigger } from "./ai-tab-trigger";
 import { NavigationControls } from "./navigation-controls";
@@ -82,11 +82,11 @@ export function TitleBar({
 				<Button
 					variant="ghost"
 					size="icon"
-					className="h-6 w-6 p-1 rounded-full non-draggable"
+					className="-ml-[35px] h-6 w-6 p-1 rounded-full non-draggable z-40 text-muted-foreground"
 					onClick={onAddTab}
 					aria-label="New Tab"
 				>
-					<Plus className="!w-5 !h-5" strokeWidth="1.5" />
+					<CircleFadingPlus className="!w-4 !h-4" />
 				</Button>
 			</div>
 			<div className="w-[20%]" />
