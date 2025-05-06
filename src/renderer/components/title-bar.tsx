@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { CircleFadingPlus, CirclePlus, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import type { RefObject } from "react";
 import { AITabTrigger } from "./ai-tab-trigger";
 import { NavigationControls } from "./navigation-controls";
@@ -8,15 +8,12 @@ import SettingsMenu from "./settings-menu";
 import { StreamsTabTrigger } from "./streams-tab-trigger";
 import { URLBar } from "./url-bar";
 
-type Theme = "system" | "light" | "dark";
-
 interface TitleBarProps {
 	url: string;
 	activeUrl: string;
 	favicon?: string;
 	isLoading: boolean;
 	currentView: "webview" | "settings";
-	theme: Theme;
 	canGoBack: boolean;
 	canGoForward: boolean;
 	canGoForwardToSettings?: boolean;
@@ -25,8 +22,6 @@ interface TitleBarProps {
 	onNavigate: (
 		action: "back" | "forward" | "refresh" | "stop" | "force-refresh",
 	) => void;
-	onThemeChange: () => void;
-	onViewChange: (view: "webview" | "settings") => void;
 	onAddTab: () => void;
 	urlInputRef?: RefObject<HTMLInputElement | null>;
 	shouldFocusAndSelect?: boolean;
@@ -40,15 +35,12 @@ export function TitleBar({
 	favicon,
 	isLoading,
 	currentView,
-	theme,
 	canGoBack,
 	canGoForward,
 	canGoForwardToSettings,
 	onUrlChange,
 	onUrlSubmit,
 	onNavigate,
-	onThemeChange,
-	onViewChange,
 	onAddTab,
 	urlInputRef,
 	shouldFocusAndSelect,
@@ -69,7 +61,6 @@ export function TitleBar({
 				canGoBack={canGoBack}
 				canGoForward={canGoForward}
 				canGoForwardToSettings={canGoForwardToSettings}
-				url={url}
 				activeUrl={activeUrl}
 				currentView={currentView}
 			/>

@@ -126,7 +126,7 @@ class HistoryService {
 		return results.slice(0, limit).map(({ url, title, favicon }) => ({
 			url,
 			title,
-			subtitle: "",
+			subtitle: ` - ${url}`,
 			favicon,
 		}));
 	}

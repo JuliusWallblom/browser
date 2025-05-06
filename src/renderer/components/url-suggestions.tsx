@@ -52,7 +52,7 @@ export function URLSuggestions({
 
 	return (
 		<div
-			className="-mt-8 absolute top-0 left-0 right-0 mt-1 bg-background border rounded-lg rounded-t-none shadow-lg overflow-hidden z-10"
+			className="-mt-8 absolute top-0 left-0 right-0 mt-1 bg-background border rounded-lg rounded-t-none shadow-lg overflow-hidden z-40"
 			onMouseEnter={onSuggestionsMouseEnter}
 			onMouseMove={onSuggestionsMouseMove}
 			onMouseLeave={onSuggestionsMouseLeave}
@@ -82,15 +82,16 @@ export function URLSuggestions({
 						<Globe className="w-4 h-4 text-muted-foreground" />
 					)}
 					<div className="flex-1 min-w-0">
-						<div className="font-medium truncate text-sm">
-							{isGoogleSearch(suggestion.url)
-								? suggestion.title.split(" - ")[0]
-								: suggestion.title}
-							<span className="font-normal text-muted-foreground">
-								{suggestion.subtitle ||
-									(isGoogleSearch(suggestion.url) ? " - Google Search" : "")}
+						<p className="text-muted-foreground truncate text-sm">
+							<span className="font-medium text-foreground">
+								{isGoogleSearch(suggestion.url)
+									? suggestion.title.split(" - ")[0]
+									: suggestion.title}
 							</span>
-						</div>
+
+							{suggestion.subtitle ||
+								(isGoogleSearch(suggestion.url) ? " - Google Search" : "")}
+						</p>
 					</div>
 				</button>
 			))}

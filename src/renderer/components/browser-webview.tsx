@@ -12,7 +12,6 @@ interface WebViewProps {
 	isActive: boolean;
 	onWebviewRef: (webview: Electron.WebviewTag | null, tabId: string) => void;
 	updateTab: (tabId: string, updates: Partial<Tab>) => void;
-	onViewChange: (view: View) => void;
 }
 
 export function WebView({
@@ -20,7 +19,6 @@ export function WebView({
 	isActive,
 	onWebviewRef,
 	updateTab,
-	onViewChange,
 }: WebViewProps) {
 	const webviewRef = useRef<Electron.WebviewTag | null>(null);
 	const isReadyRef = useRef(false);
@@ -147,38 +145,58 @@ export function WebView({
 		const handleDidStopLoading = async () => {
 			const webview = webviewRef.current;
 			if (!webview) return;
+			const currentWebviewUrl = webview.getURL();
 
-			const currentUrl = isReadyRef.current ? webview.getURL() : tab.url;
 			console.log("[WebView] did-stop-loading", {
-				url: currentUrl,
-				isReady: isReadyRef.current,
+				eventUrl: currentWebviewUrl,
+				tabUrl: tab.url,
+				tabIsLoading: tab.isLoading,
 				initialLoadDone: initialLoadDoneRef.current,
-				isRefreshing: isRefreshingRef.current,
 			});
+
+			// Check for placeholder scenario stop
+			if (
+				currentWebviewUrl === "about:blank" &&
+				!initialLoadDoneRef.current &&
+				tab.isLoading &&
+				tab.url !== "about:blank"
+			) {
+				console.log(
+					"[WebView] did-stop-loading: Placeholder about:blank stopped. Preserving isLoading for target URL:",
+					tab.url,
+				);
+				isRefreshingRef.current = false; // Can reset this if needed
+				// DO NOT UPDATE STATE, DO NOT SET initialLoadDoneRef
+				return;
+			}
+
+			// For all other stops (actual target page, or genuine about:blank):
+			if (!initialLoadDoneRef.current) {
+				// Mark the main load cycle as done if it wasn't already
+				initialLoadDoneRef.current = true;
+			}
+			isRefreshingRef.current = false; // Reset refresh flag
 
 			if (isReadyRef.current) {
 				updateNavigationState();
-				if (currentUrl !== "about:blank") {
+				if (currentWebviewUrl !== "about:blank") {
 					await updateFavicon();
 				}
 			}
 
-			updateTab(tab.id, {
-				isLoading: false, // Always set to false when any load stops
-				...(currentUrl === "about:blank" && {
-					favicon: undefined,
-					title: "New Tab",
-				}),
-			});
+			const updatesForTab: Partial<Tab> = { isLoading: false };
 
-			// If this stop corresponds to the main navigation or a refresh, mark initial load as done.
-			if (!initialLoadDoneRef.current || isRefreshingRef.current) {
-				initialLoadDoneRef.current = true;
-				isRefreshingRef.current = false;
+			if (currentWebviewUrl === "about:blank") {
+				// Genuine stop on about:blank
+				updatesForTab.url = "about:blank";
+				updatesForTab.title = "New Tab";
+				updatesForTab.favicon = undefined;
+				updatesForTab.canGoBack = webview.canGoBack();
+				updatesForTab.canGoForward = webview.canGoForward();
 			}
 
-			// Ensure navigation state is updated after loading stops and view is ready,
-			// *unless* we are currently on the settings page (handled manually).
+			updateTab(tab.id, updatesForTab);
+
 			if (
 				isReadyRef.current &&
 				tab.url !== `${APP_NAME.toLowerCase()}://settings`
@@ -192,61 +210,76 @@ export function WebView({
 			if (!webview) return;
 
 			console.log("[WebView] did-navigate", {
-				url: event.url,
-				currentUrl: isReadyRef.current ? webview.getURL() : tab.url,
-				isReady: isReadyRef.current,
+				eventUrl: event.url,
+				tabUrl: tab.url,
+				tabIsLoading: tab.isLoading,
 				initialLoadDone: initialLoadDoneRef.current,
-				isRefreshing: isRefreshingRef.current,
 			});
 
-			// Reset initialLoadDoneRef for new navigations
-			initialLoadDoneRef.current = false;
+			if (event.url === "about:blank") {
+				// Check for placeholder scenario
+				if (
+					!initialLoadDoneRef.current &&
+					tab.isLoading &&
+					tab.url !== "about:blank"
+				) {
+					console.log(
+						"[WebView] did-navigate: Placeholder about:blank detected. Preserving state for target:",
+						tab.url,
+					);
+					setErrorEvent(null);
+					// DO NOT UPDATE STATE, DO NOT SET initialLoadDoneRef
+					return;
+				}
+				// Genuine navigation TO about:blank
+				console.log("[WebView] did-navigate: Genuine about:blank navigation.");
+				// Treat about:blank as instantly loaded.
+				initialLoadDoneRef.current = true; // Set true since this navigation is done.
+				isRefreshingRef.current = false;
 
-			// Handle switching to settings view
+				updateTab(tab.id, {
+					url: "about:blank",
+					title: "New Tab",
+					favicon: undefined,
+					isLoading: false, // <<< Key: Set loading false
+					isError: false,
+					canGoBack: webview.canGoBack(),
+					canGoForward: webview.canGoForward(),
+					view: "webview",
+				});
+				setErrorEvent(null);
+				return;
+			}
+
+			// If we reach here, event.url is NOT about:blank.
+			initialLoadDoneRef.current = false; // Reset for new real page load cycle.
+
 			if (event.url === `${APP_NAME.toLowerCase()}://settings`) {
 				updateTab(tab.id, {
 					url: event.url,
 					title: "Settings",
 					favicon: undefined,
-					isLoading: false, // Settings page doesn't load in webview
+					isLoading: false,
 					isError: false,
 					canGoBack: true,
 					canGoForward: false,
+					view: "settings",
 				});
-				onViewChange("settings");
+				setErrorEvent(null);
 				return;
 			}
 
-			// Handle switching away from settings view
-			if (
-				tab.url === `${APP_NAME.toLowerCase()}://settings` &&
-				event.url !== `${APP_NAME.toLowerCase()}://settings`
-			) {
-				onViewChange("webview");
+			if (tab.view === "settings") {
+				updateTab(tab.id, { view: "webview" });
 			}
 
-			// Don't update URL or start loading if it's about:blank initially
-			if (event.url === "about:blank" && !webview.getURL()) {
-				// Check if webview's current URL is also blank or uninitialized
-				updateTab(tab.id, {
-					isLoading: false, // about:blank doesn't really load
-					isError: false,
-					favicon: undefined,
-					title: "New Tab",
-					url: "about:blank",
-				});
-				return;
-			}
-
-			// For any other navigation, set loading to true.
+			// For any other real webpage URL
 			updateTab(tab.id, {
 				url: event.url,
 				isError: false,
-				isLoading: true, // Start loading for the new page
+				isLoading: true,
 			});
-
 			setErrorEvent(null);
-			// isReadyRef.current will be set by dom-ready
 		};
 
 		const handlePageTitleUpdated = (event: Electron.PageTitleUpdatedEvent) => {
@@ -319,6 +352,13 @@ export function WebView({
 			}
 		};
 
+		const handleWillNavigate = (event: Electron.WillNavigateEvent) => {
+			console.log("[WebView] Will navigate to:", event.url);
+			updateTab(tab.id, {
+				isLoading: true,
+			});
+		};
+
 		webview.addEventListener("dom-ready", handleDomReady);
 		webview.addEventListener("did-start-loading", handleDidStartLoading);
 		webview.addEventListener("did-stop-loading", handleDidStopLoading);
@@ -326,6 +366,7 @@ export function WebView({
 		webview.addEventListener("did-navigate-in-page", handleDidNavigateInPage);
 		webview.addEventListener("did-fail-load", handleDidFailLoad);
 		webview.addEventListener("page-title-updated", handlePageTitleUpdated);
+		webview.addEventListener("will-navigate", handleWillNavigate);
 
 		return () => {
 			isReadyRef.current = false;
@@ -341,15 +382,17 @@ export function WebView({
 			);
 			webview.removeEventListener("did-fail-load", handleDidFailLoad);
 			webview.removeEventListener("page-title-updated", handlePageTitleUpdated);
+			webview.removeEventListener("will-navigate", handleWillNavigate);
 		};
 	}, [
 		tab.id,
 		tab.url,
 		tab.favicon,
+		tab.view,
+		tab.isLoading,
 		updateTab,
 		updateNavigationState,
 		updateFavicon,
-		onViewChange,
 	]);
 
 	useEffect(() => {

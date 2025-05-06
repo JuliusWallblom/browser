@@ -10,4 +10,5 @@ export interface Tab {
 	canGoForwardToSettings?: boolean;
 	isError?: boolean;
 	previousUrl?: string;
+	view: "webview" | "settings";
 }

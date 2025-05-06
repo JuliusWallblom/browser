@@ -11,7 +11,6 @@ interface NavigationControlsProps {
 	canGoBack: boolean;
 	canGoForward: boolean;
 	canGoForwardToSettings?: boolean;
-	url: string;
 	activeUrl: string;
 	currentView: "webview" | "settings";
 }
@@ -22,7 +21,6 @@ export function NavigationControls({
 	canGoBack,
 	canGoForward,
 	canGoForwardToSettings,
-	url,
 	activeUrl,
 	currentView,
 }: NavigationControlsProps) {
@@ -69,7 +67,12 @@ export function NavigationControls({
 			<Button
 				variant="ghost"
 				type="button"
-				onClick={() => onNavigate("back")}
+				onClick={() => {
+					if (isLoading) {
+						onNavigate("stop");
+					}
+					onNavigate("back");
+				}}
 				onContextMenu={handleContextMenu("back")}
 				disabled={!canGoBack}
 				className={cn(
@@ -83,12 +86,14 @@ export function NavigationControls({
 			<Button
 				variant="ghost"
 				type="button"
-				onClick={() => onNavigate("forward")}
+				onClick={() => {
+					if (isLoading) {
+						onNavigate("stop");
+					}
+					onNavigate("forward");
+				}}
 				onContextMenu={handleContextMenu("forward")}
-				disabled={
-					!(canGoForward || canGoForwardToSettings) ||
-					currentView === "settings"
-				}
+				disabled={!(canGoForward || canGoForwardToSettings)}
 				className={cn(
 					"h-auto w-auto p-1 rounded-full non-draggable",
 					canGoForward || canGoForwardToSettings

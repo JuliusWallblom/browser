@@ -5,17 +5,12 @@ import { useWebviews } from "../../contexts/webview-context";
 import { SettingsPage } from "../pages/settings";
 import { WebView } from "./browser-webview";
 
-interface BrowserContentProps {
-	currentView: "webview" | "settings";
-	onViewChange: (view: "webview" | "settings") => void;
-}
-
-export function BrowserContent({
-	currentView,
-	onViewChange,
-}: BrowserContentProps) {
+export function BrowserContent() {
+	// Removed props from destructuring
 	const { tabs, activeTabId, updateTab } = useTabs();
 	const { webviewRefs } = useWebviews();
+
+	const activeTab = tabs.find((tab) => tab.id === activeTabId);
 
 	const handleWebviewRef = useCallback(
 		(webview: Electron.WebviewTag | null, tabId: string) => {
@@ -31,7 +26,10 @@ export function BrowserContent({
 	return (
 		<>
 			<div
-				className={cn("flex-1 relative", currentView !== "webview" && "hidden")}
+				className={cn(
+					"flex-1 relative",
+					activeTab?.view !== "webview" && "hidden",
+				)}
 			>
 				{tabs.map((tab) => (
 					<WebView
@@ -40,20 +38,13 @@ export function BrowserContent({
 						isActive={tab.id === activeTabId}
 						onWebviewRef={handleWebviewRef}
 						updateTab={updateTab}
-						onViewChange={onViewChange}
+						// onViewChange will be removed from WebViewProps later
 					/>
 				))}
 			</div>
-			{currentView === "settings" && (
+			{activeTab?.view === "settings" && (
 				<div className="flex-1 bg-background-primary overflow-auto">
-					<SettingsPage
-						onViewChange={onViewChange}
-						onUrlChange={(url) => {
-							if (activeTabId) {
-								updateTab(activeTabId, { url });
-							}
-						}}
-					/>
+					<SettingsPage />
 				</div>
 			)}
 		</>

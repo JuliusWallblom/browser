@@ -115,12 +115,36 @@ export function URLBar({
 		};
 
 		// Filter out the current URL and normalize URLs for comparison
-		const normalizeUrl = (url: string) => {
+		const normalizeUrl = (urlToNormalize: string) => {
 			try {
-				const urlObj = new URL(url.toLowerCase());
+				const lowerUrl = urlToNormalize.toLowerCase();
+				// isGoogleSearch can throw if urlToNormalize is not a valid URL, so handle it
+				let isSearch = false;
+				try {
+					const tempUrlObj = new URL(lowerUrl);
+					isSearch =
+						tempUrlObj.hostname.includes("google.") &&
+						tempUrlObj.pathname === "/search";
+				} catch {
+					// Not a valid URL, or not a Google search
+				}
+
+				if (isSearch) {
+					const urlObj = new URL(lowerUrl); // Known to be valid if isSearch is true
+					const q = urlObj.searchParams.get("q");
+					if (q) {
+						// Standardize Google search URL for comparison
+						return `${urlObj.protocol}//${urlObj.host}${urlObj.pathname}?q=${encodeURIComponent(q.trim())}`;
+					}
+					// If it's a Google search URL but no 'q' param, treat as a regular URL for normalization
+				}
+
+				// Fallback for non-Google URLs or Google URLs without 'q' param after trying to parse
+				const urlObj = new URL(lowerUrl); // This might throw if lowerUrl is not a valid URL string
 				return `${urlObj.protocol}//${urlObj.host}${urlObj.pathname}${urlObj.search}`;
 			} catch {
-				return url.toLowerCase();
+				// If any URL parsing fails, return the lowercased original string
+				return urlToNormalize.toLowerCase();
 			}
 		};
 
@@ -148,14 +172,31 @@ export function URLBar({
 
 		// Conditionally add settings suggestion based on input
 		let finalSuggestions = sortedUniqueSuggestions;
-		const lowerInput = inputValue.toLowerCase();
-		if (
-			inputValue.trim() && // Only add if there's input
-			`${APP_NAME.toLowerCase()}://settings`.startsWith(lowerInput)
-		) {
-			// Avoid duplicate if it somehow came from history
-			if (!finalSuggestions.some((s) => s.url === settingsSuggestion.url)) {
-				finalSuggestions = [settingsSuggestion, ...finalSuggestions];
+		const lowerInput = inputValue.toLowerCase().trim();
+
+		if (lowerInput) {
+			const appNameLower = APP_NAME.toLowerCase();
+			const settingsTitleLower = settingsSuggestion.title.toLowerCase(); // "settings" by default
+
+			const matchesSettingsKeyword = settingsTitleLower.includes(lowerInput);
+			// Ensure appNameLower check is meaningful, e.g. input "m" for "merlin" is too broad.
+			// Require at least 2 chars or if input is shorter, it must be the start of appNameLower.
+			const matchesAppName =
+				appNameLower.includes(lowerInput) &&
+				(lowerInput.length >= 2 || appNameLower.startsWith(lowerInput));
+			const matchesSettingsUrlSchema = `${appNameLower}://settings`.startsWith(
+				lowerInput,
+			);
+
+			if (
+				matchesSettingsKeyword ||
+				matchesAppName ||
+				matchesSettingsUrlSchema
+			) {
+				// Avoid duplicate if it somehow came from history
+				if (!finalSuggestions.some((s) => s.url === settingsSuggestion.url)) {
+					finalSuggestions = [settingsSuggestion, ...finalSuggestions];
+				}
 			}
 		}
 
@@ -440,7 +481,7 @@ export function URLBar({
 			<div className="flex-1 relative h-7">
 				<div
 					className={cn(
-						"absolute left-1.5 top-1/2 -translate-y-1/2 w-4 h-4 z-40",
+						"absolute left-1.5 top-1/2 -translate-y-1/2 w-4 h-4 z-[51]",
 					)}
 				>
 					{getIcon()}
@@ -455,7 +496,7 @@ export function URLBar({
 					onBlur={handleBlur}
 					onMouseDown={handleMouseDown}
 					onKeyDown={handleKeyDown}
-					className="relative w-full h-full pl-7 pr-2 rounded-full text-sm bg-muted border-none z-30"
+					className="relative w-full h-full pl-7 pr-2 rounded-full text-sm bg-muted border-none z-50"
 					placeholder="Search or enter URL"
 				/>
 				<URLSuggestions
