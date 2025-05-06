@@ -278,14 +278,34 @@ export function URLBar({
 	// Handle favicon loading
 	useEffect(() => {
 		if (favicon) {
-			setIsFaviconLoading(true);
 			const img = new Image();
-			img.onload = () => setIsFaviconLoading(false);
-			img.onerror = () => setIsFaviconLoading(false);
 			img.src = favicon;
-		} else {
-			setIsFaviconLoading(false);
+
+			if (img.complete) {
+				// Image is already loaded (e.g., from cache or data URI)
+				setIsFaviconLoading(false);
+				return; // No listeners needed, so no cleanup for them needed
+			}
+
+			// Image needs to be loaded
+			setIsFaviconLoading(true);
+			const handleLoad = () => {
+				setIsFaviconLoading(false);
+			};
+			const handleError = () => {
+				setIsFaviconLoading(false); // Also hide loader on error
+			};
+
+			img.addEventListener("load", handleLoad);
+			img.addEventListener("error", handleError);
+
+			// Cleanup function for the effect
+			return () => {
+				img.removeEventListener("load", handleLoad);
+				img.removeEventListener("error", handleError);
+			};
 		}
+		setIsFaviconLoading(false);
 	}, [favicon]);
 
 	// Update suggestions when input changes - NOW CALLS the shared function

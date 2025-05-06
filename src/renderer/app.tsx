@@ -89,7 +89,6 @@ function Browser() {
 					if (webview.canGoForward()) {
 						webview.goForward();
 						updateTab(activeTabId, {
-							isLoading: true,
 							canGoForwardToSettings: false,
 							view: "webview",
 						});
