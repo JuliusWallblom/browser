@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { CircleFadingPlus, Plus } from "lucide-react";
+import { CircleFadingPlus, CirclePlus, Plus } from "lucide-react";
 import type { RefObject } from "react";
 import { AITabTrigger } from "./ai-tab-trigger";
 import { NavigationControls } from "./navigation-controls";
@@ -19,6 +19,7 @@ interface TitleBarProps {
 	theme: Theme;
 	canGoBack: boolean;
 	canGoForward: boolean;
+	canGoForwardToSettings?: boolean;
 	onUrlChange: (url: string) => void;
 	onUrlSubmit: (e: React.FormEvent) => void;
 	onNavigate: (
@@ -30,6 +31,7 @@ interface TitleBarProps {
 	urlInputRef?: RefObject<HTMLInputElement | null>;
 	shouldFocusAndSelect?: boolean;
 	isError?: boolean;
+	onNavigateTo: (url: string) => void;
 }
 
 export function TitleBar({
@@ -41,6 +43,7 @@ export function TitleBar({
 	theme,
 	canGoBack,
 	canGoForward,
+	canGoForwardToSettings,
 	onUrlChange,
 	onUrlSubmit,
 	onNavigate,
@@ -50,6 +53,7 @@ export function TitleBar({
 	urlInputRef,
 	shouldFocusAndSelect,
 	isError,
+	onNavigateTo,
 }: TitleBarProps) {
 	return (
 		<div
@@ -64,8 +68,10 @@ export function TitleBar({
 				isLoading={isLoading}
 				canGoBack={canGoBack}
 				canGoForward={canGoForward}
+				canGoForwardToSettings={canGoForwardToSettings}
 				url={url}
 				activeUrl={activeUrl}
+				currentView={currentView}
 			/>
 			<div className="flex items-center gap-2 w-full min-w-[146px]">
 				<URLBar
@@ -82,16 +88,16 @@ export function TitleBar({
 				<Button
 					variant="ghost"
 					size="icon"
-					className="-ml-[35px] h-6 w-6 p-1 rounded-full non-draggable z-40 text-muted-foreground"
+					className="h-6 w-6 p-1 rounded-full non-draggable z-40 text-muted-foreground"
 					onClick={onAddTab}
 					aria-label="New Tab"
 				>
-					<CircleFadingPlus className="!w-4 !h-4" />
+					<Plus className="!w-4 !h-4" />
 				</Button>
 			</div>
 			<div className="w-[20%]" />
 			<AITabTrigger />
-			<SettingsMenu onViewChange={onViewChange} onUrlChange={onUrlChange} />
+			<SettingsMenu onNavigateTo={onNavigateTo} />
 		</div>
 	);
 }

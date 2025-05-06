@@ -2,9 +2,23 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { historyService } from "@/lib/history";
 import { Globe, Loader2, Settings, Search } from "lucide-react";
-import { type RefObject, useEffect, useRef, useState } from "react";
+import {
+	type RefObject,
+	useEffect,
+	useRef,
+	useState,
+	useCallback,
+} from "react";
 import { ErrorFavicon } from "./error-favicon";
 import { URLSuggestions, type Suggestion } from "./url-suggestions";
+import { APP_NAME } from "@/constants/app";
+
+const settingsSuggestion: Suggestion = {
+	url: `${APP_NAME.toLowerCase()}://settings`,
+	title: "Settings",
+	subtitle: ` - ${APP_NAME}`,
+	// No favicon needed, icon handled in URLSuggestions
+};
 
 // Helper function to check if string ends with a domain extension
 const endsWithDomainExtension = (input: string) => {
@@ -84,6 +98,78 @@ export function URLBar({
 
 	const inputRef = externalRef || internalRef;
 
+	// Define updateSuggestions outside useEffect so it's accessible everywhere
+	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+	const updateSuggestions = useCallback(async () => {
+		if (!isEditing || !inputValue.trim()) {
+			setSuggestions([]);
+			return;
+		}
+
+		const results = await historyService.searchHistory(inputValue);
+		const defaultSearch = {
+			url: `https://www.google.com/search?q=${encodeURIComponent(inputValue)}`,
+			title: inputValue,
+			subtitle: "", // Subtitle handled in URLSuggestions
+			favicon: undefined, // Favicon handled in URLSuggestions
+		};
+
+		// Filter out the current URL and normalize URLs for comparison
+		const normalizeUrl = (url: string) => {
+			try {
+				const urlObj = new URL(url.toLowerCase());
+				return `${urlObj.protocol}//${urlObj.host}${urlObj.pathname}${urlObj.search}`;
+			} catch {
+				return url.toLowerCase();
+			}
+		};
+
+		const currentNormalizedUrl = normalizeUrl(url);
+		const filteredResults = results.filter(
+			(result) => normalizeUrl(result.url) !== currentNormalizedUrl,
+		);
+
+		// Combine default search (if applicable) and history results
+		const combinedSuggestions = looksLikeUrl(inputValue)
+			? filteredResults
+			: [defaultSearch, ...filteredResults];
+
+		// Filter out duplicates based on URL
+		const uniqueSuggestions = combinedSuggestions.filter(
+			(suggestion, index, self) =>
+				index ===
+				self.findIndex(
+					(s) => normalizeUrl(s.url) === normalizeUrl(suggestion.url),
+				),
+		);
+
+		// Sort the unique suggestions
+		const sortedUniqueSuggestions = sortSuggestions(uniqueSuggestions);
+
+		// Conditionally add settings suggestion based on input
+		let finalSuggestions = sortedUniqueSuggestions;
+		const lowerInput = inputValue.toLowerCase();
+		if (
+			inputValue.trim() && // Only add if there's input
+			`${APP_NAME.toLowerCase()}://settings`.startsWith(lowerInput)
+		) {
+			// Avoid duplicate if it somehow came from history
+			if (!finalSuggestions.some((s) => s.url === settingsSuggestion.url)) {
+				finalSuggestions = [settingsSuggestion, ...finalSuggestions];
+			}
+		}
+
+		setSuggestions(finalSuggestions);
+	}, [
+		isEditing,
+		inputValue,
+		url,
+		historyService,
+		looksLikeUrl,
+		sortSuggestions,
+		settingsSuggestion,
+	]);
+
 	// Handle focus and select when shouldFocusAndSelect changes
 	useEffect(() => {
 		if (shouldFocusAndSelect) {
@@ -103,11 +189,11 @@ export function URLBar({
 					return;
 				}
 
-				// Handle special URLs like merlin:// or about:blank
+				// Handle special URLs like app:// or about:blank
 				if (
-					url.startsWith("merlin://") ||
+					url.startsWith(`${APP_NAME.toLowerCase()}://`) ||
 					url === "about:blank" ||
-					inputValue.startsWith("merlin://")
+					inputValue.startsWith(`${APP_NAME.toLowerCase()}://`)
 				) {
 					if (url !== inputValue) {
 						setInputValue(url);
@@ -161,49 +247,10 @@ export function URLBar({
 		}
 	}, [favicon]);
 
-	// Update suggestions when input changes
+	// Update suggestions when input changes - NOW CALLS the shared function
 	useEffect(() => {
-		const updateSuggestions = async () => {
-			if (!isEditing || !inputValue.trim()) {
-				setSuggestions([]);
-				return;
-			}
-
-			const results = await historyService.searchHistory(inputValue);
-			const defaultSearch = {
-				url: `https://www.google.com/search?q=${encodeURIComponent(inputValue)}`,
-				title: inputValue,
-				subtitle: " - Google Search",
-				favicon: "https://www.google.com/favicon.ico",
-			};
-
-			// Filter out the current URL and normalize URLs for comparison
-			const normalizeUrl = (url: string) => {
-				try {
-					const urlObj = new URL(url.toLowerCase());
-					return `${urlObj.protocol}//${urlObj.host}${urlObj.pathname}${urlObj.search}`;
-				} catch {
-					return url.toLowerCase();
-				}
-			};
-
-			const currentNormalizedUrl = normalizeUrl(url);
-			const filteredResults = results.filter(
-				(result) => normalizeUrl(result.url) !== currentNormalizedUrl,
-			);
-
-			// Only include Google Search if input doesn't look like a URL
-			setSuggestions(
-				sortSuggestions(
-					looksLikeUrl(inputValue)
-						? filteredResults
-						: [defaultSearch, ...filteredResults],
-				),
-			);
-		};
-
 		updateSuggestions();
-	}, [inputValue, isEditing, url]);
+	}, [updateSuggestions]); // Depends on the useCallback dependencies
 
 	useEffect(() => {
 		// Reset mouse movement flag when suggestions change
@@ -360,44 +407,6 @@ export function URLBar({
 		if (!isFocused) {
 			setSuggestions([]);
 		}
-	};
-
-	const updateSuggestions = async () => {
-		if (!isEditing || !inputValue.trim()) {
-			setSuggestions([]);
-			return;
-		}
-
-		const results = await historyService.searchHistory(inputValue);
-		const defaultSearch = {
-			url: `https://www.google.com/search?q=${encodeURIComponent(inputValue)}`,
-			title: inputValue,
-			subtitle: " - Google Search",
-			favicon: "https://www.google.com/favicon.ico",
-		};
-
-		// Filter out the current URL and normalize URLs for comparison
-		const normalizeUrl = (url: string) => {
-			try {
-				const urlObj = new URL(url.toLowerCase());
-				return `${urlObj.protocol}//${urlObj.host}${urlObj.pathname}${urlObj.search}`;
-			} catch {
-				return url.toLowerCase();
-			}
-		};
-
-		const currentNormalizedUrl = normalizeUrl(url);
-		const filteredResults = results.filter(
-			(result) => normalizeUrl(result.url) !== currentNormalizedUrl,
-		);
-
-		setSuggestions(
-			sortSuggestions(
-				looksLikeUrl(inputValue)
-					? filteredResults
-					: [defaultSearch, ...filteredResults],
-			),
-		);
 	};
 
 	const getIcon = () => {

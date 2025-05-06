@@ -10,8 +10,10 @@ interface NavigationControlsProps {
 	isLoading: boolean;
 	canGoBack: boolean;
 	canGoForward: boolean;
+	canGoForwardToSettings?: boolean;
 	url: string;
 	activeUrl: string;
+	currentView: "webview" | "settings";
 }
 
 export function NavigationControls({
@@ -19,10 +21,12 @@ export function NavigationControls({
 	isLoading,
 	canGoBack,
 	canGoForward,
+	canGoForwardToSettings,
 	url,
 	activeUrl,
+	currentView,
 }: NavigationControlsProps) {
-	const isBlankPage = activeUrl === "";
+	const isBlankPage = activeUrl === "about:blank";
 	useEffect(() => {
 		if (!window.electron?.ipcRenderer) {
 			console.error("IPC renderer not available");
@@ -81,10 +85,15 @@ export function NavigationControls({
 				type="button"
 				onClick={() => onNavigate("forward")}
 				onContextMenu={handleContextMenu("forward")}
-				disabled={!canGoForward}
+				disabled={
+					!(canGoForward || canGoForwardToSettings) ||
+					currentView === "settings"
+				}
 				className={cn(
 					"h-auto w-auto p-1 rounded-full non-draggable",
-					canGoForward ? "hover:bg-muted" : "opacity-50 cursor-not-allowed",
+					canGoForward || canGoForwardToSettings
+						? "hover:bg-muted"
+						: "opacity-50 cursor-not-allowed",
 				)}
 				aria-label="Go forward"
 			>
@@ -93,7 +102,7 @@ export function NavigationControls({
 			<Button
 				variant="ghost"
 				type="button"
-				disabled={isBlankPage}
+				disabled={isBlankPage || currentView === "settings"}
 				onClick={() => onNavigate(isLoading ? "stop" : "refresh")}
 				onContextMenu={handleContextMenu("refresh")}
 				className={cn("h-auto w-auto p-1 rounded-full non-draggable")}

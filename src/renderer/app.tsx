@@ -1,4 +1,4 @@
-import { DEFAULT_URL } from "@/constants/app";
+import { APP_NAME, DEFAULT_URL } from "@/constants/app";
 import { TabsProvider, useTabs } from "@/contexts/tabs-context";
 import { WebviewProvider, useWebviews } from "@/contexts/webview-context";
 import {
@@ -44,42 +44,126 @@ function Browser() {
 		(action: "back" | "forward" | "refresh" | "stop" | "force-refresh") => {
 			if (!activeTabId) return;
 
+			const activeTab = tabs.find((tab) => tab.id === activeTabId);
+			if (!activeTab) return;
+
+			// Store if the current view/url is settings *before* potential navigation
+			const wasOnSettingsPage =
+				currentView === "settings" ||
+				activeTab.url === `${APP_NAME.toLowerCase()}://settings`;
+
 			const webview = webviewRefs.current.get(activeTabId);
 			if (!webview) return;
 
 			try {
+				// If on settings page, ignore refresh/stop actions
+				if (
+					wasOnSettingsPage &&
+					(action === "refresh" ||
+						action === "stop" ||
+						action === "force-refresh")
+				) {
+					// Also reset the forward flag if refreshing from settings (shouldn't happen often)
+					updateTab(activeTabId, { canGoForwardToSettings: false });
+					return;
+				}
+
+				// Handle forward action specifically if the target is the settings page
+				if (
+					action === "forward" &&
+					activeTab.canGoForwardToSettings &&
+					!webview.canGoForward()
+				) {
+					const currentUrlBeforeNav = activeTab.url;
+					updateTab(activeTabId, {
+						url: `${APP_NAME.toLowerCase()}://settings`,
+						title: "Settings",
+						favicon: undefined,
+						isLoading: false,
+						isError: false,
+						canGoForward: false,
+						canGoForwardToSettings: false,
+						canGoBack: true,
+						previousUrl:
+							currentUrlBeforeNav === `${APP_NAME.toLowerCase()}://settings`
+								? activeTab.previousUrl
+								: currentUrlBeforeNav,
+					});
+					setCurrentView("settings");
+					return;
+				}
+
 				switch (action) {
 					case "back":
-						webview.goBack();
-						updateTab(activeTabId, { isLoading: true });
+						if (wasOnSettingsPage) {
+							// Navigate back from settings MANUALLY using previousUrl
+							const urlToLoad = activeTab.previousUrl || "about:blank";
+							updateTab(activeTabId, {
+								url: urlToLoad,
+								isLoading: urlToLoad !== "about:blank",
+								canGoForwardToSettings: true, // Allow forwarding back to settings
+								previousUrl: undefined, // Clear previous URL
+							});
+							setCurrentView("webview");
+
+							// Use requestAnimationFrame to ensure view is updated before loading URL
+							requestAnimationFrame(() => {
+								// Re-check webview ref in case tab changed rapidly
+								const currentWebview = webviewRefs.current.get(activeTabId);
+								if (currentWebview && urlToLoad !== "about:blank") {
+									try {
+										currentWebview.loadURL(urlToLoad);
+									} catch (err) {
+										console.error("Error loading previous URL (rAF):", err);
+										updateTab(activeTabId, { isLoading: false });
+									}
+								} else if (currentWebview && urlToLoad === "about:blank") {
+									try {
+										currentWebview.loadURL("about:blank");
+									} catch (err) {
+										// No action needed if about:blank is already loaded
+									}
+								}
+							});
+						} else {
+							// Normal back navigation
+							webview.goBack();
+							console.log("HEREEEEEEE:", activeTab.previousUrl);
+
+							updateTab(activeTabId, {
+								url: activeTab.previousUrl || "about:blank",
+								isLoading: true,
+								// No change to canGoForwardToSettings here
+							});
+						}
 						break;
 					case "forward":
+						// Note: This block is only reached if canGoForwardToSettings was false
 						webview.goForward();
-						updateTab(activeTabId, { isLoading: true });
+						updateTab(activeTabId, {
+							isLoading: true,
+							canGoForwardToSettings: false,
+						});
 						break;
 					case "refresh":
 						webview.reload();
-						updateTab(activeTabId, { isLoading: true });
+						updateTab(activeTabId, {
+							isLoading: true,
+							canGoForwardToSettings: false,
+						});
 						break;
 					case "force-refresh":
 						webview.reloadIgnoringCache();
-						updateTab(activeTabId, { isLoading: true });
+						updateTab(activeTabId, {
+							isLoading: true,
+							canGoForwardToSettings: false,
+						});
 						break;
 					case "stop":
 						webview.stop();
 						window.electron.webview.stopLoading();
 						updateTab(activeTabId, { isLoading: false });
 						break;
-				}
-
-				// Update navigation state after action
-				if (action !== "stop") {
-					setTimeout(() => {
-						updateTab(activeTabId, {
-							canGoBack: webview.canGoBack(),
-							canGoForward: webview.canGoForward(),
-						});
-					}, 100);
 				}
 			} catch (err) {
 				console.error("Navigation action failed:", err);
@@ -88,12 +172,91 @@ function Browser() {
 				}
 			}
 		},
-		[activeTabId, updateTab, webviewRefs],
+		[activeTabId, updateTab, webviewRefs, currentView, tabs],
 	);
 
 	const handleUrlChange = useCallback((url: string) => {
 		setCurrentUrl(url);
 	}, []);
+
+	const navigateToUrl = useCallback(
+		(urlToLoad: string) => {
+			if (!activeTabId) return;
+			const activeTab = tabs.find((tab) => tab.id === activeTabId);
+			if (!activeTab) return;
+
+			// Special handling for settings
+			if (urlToLoad === `${APP_NAME.toLowerCase()}://settings`) {
+				const currentUrlBeforeNav = activeTab.url;
+				updateTab(activeTabId, {
+					url: `${APP_NAME.toLowerCase()}://settings`,
+					title: "Settings",
+					isLoading: false,
+					isError: false,
+					favicon: undefined,
+					canGoForward: false, // Explicitly set
+					canGoBack: true, // Explicitly set
+					canGoForwardToSettings: false, // Reset flag
+					previousUrl:
+						currentUrlBeforeNav === `${APP_NAME.toLowerCase()}://settings`
+							? activeTab.previousUrl
+							: currentUrlBeforeNav,
+				});
+				setCurrentView("settings");
+				return;
+			}
+
+			// If currently in settings view, switch back to webview before navigating
+			if (currentView === "settings") {
+				setCurrentView("webview");
+			}
+
+			// Proceed with loading the URL in the webview
+			updateTab(activeTabId, {
+				url: urlToLoad,
+				isLoading: true,
+				canGoForwardToSettings: false, // Reset flag for any new navigation
+			});
+
+			const webview = webviewRefs.current.get(activeTabId);
+			if (!webview) return;
+
+			try {
+				// For new tabs or blank pages, first load about:blank
+				if (webview.src === "") {
+					webview.src = "about:blank";
+					// Wait for dom-ready before loading the actual URL
+					const handleDomReady = () => {
+						webview.loadURL(urlToLoad).catch((err) => {
+							console.error("Failed to load URL:", err);
+							updateTab(activeTabId, {
+								isLoading: false,
+								canGoForwardToSettings: false,
+							});
+						});
+						webview.removeEventListener("dom-ready", handleDomReady);
+					};
+					webview.addEventListener("dom-ready", handleDomReady);
+				} else {
+					// For already initialized webviews, load directly
+					webview.loadURL(urlToLoad).catch((err) => {
+						console.error("Failed to load URL:", err);
+						updateTab(activeTabId, {
+							isLoading: false,
+							canGoForwardToSettings: false,
+						});
+					});
+				}
+			} catch (err) {
+				console.error("Error loading URL:", err);
+				updateTab(activeTabId, {
+					isLoading: false,
+					canGoForwardToSettings: false,
+				});
+			}
+		},
+		[activeTabId, updateTab, webviewRefs, currentView, tabs],
+	);
 
 	const handleUrlSubmit = useCallback(
 		(e: React.FormEvent) => {
@@ -108,54 +271,28 @@ function Browser() {
 
 			// Special handling for empty input - load about:blank
 			if (!trimmedInput) {
-				updateTab(activeTabId, { url: "about:blank", isLoading: false });
+				updateTab(activeTabId, { url: "about:blank", isLoading: true });
 				return;
 			}
 
-			// Check if input is a URL or search term
+			// Determine the final URL (handle search, add protocol)
 			const isUrl =
-				/^[a-zA-Z]+:\/\//.test(trimmedInput) || // Has protocol
-				/^[\w-]+\.([\w-]+\.)*[\w-]+$/.test(trimmedInput) || // Domain name pattern
-				/^localhost(:\d+)?$/.test(trimmedInput); // Localhost
-
-			// Create the URL to load
-			const urlToLoad = isUrl
-				? !trimmedInput.includes("://")
-					? `https://${trimmedInput}`
-					: trimmedInput
+				/^([a-zA-Z]+:\/\/)|(localhost(:\d+)?$)|([\w-]+\.[\w-]+)/.test(
+					trimmedInput,
+				);
+			const finalUrl = isUrl
+				? trimmedInput.includes("://") || trimmedInput.startsWith("localhost")
+					? trimmedInput
+					: `https://${trimmedInput}`
 				: `https://www.google.com/search?q=${encodeURIComponent(trimmedInput)}`;
 
-			updateTab(activeTabId, { url: urlToLoad, isLoading: true });
+			// Blur the input
+			input?.blur();
 
-			const webview = webviewRefs.current.get(activeTabId);
-			if (!webview) return;
-
-			try {
-				// For new tabs or blank pages, first load about:blank
-				if (webview.src === "") {
-					webview.src = "about:blank";
-					// Wait for dom-ready before loading the actual URL
-					const handleDomReady = () => {
-						webview.loadURL(urlToLoad).catch((err) => {
-							console.error("Failed to load URL:", err);
-							updateTab(activeTabId, { isLoading: false });
-						});
-						webview.removeEventListener("dom-ready", handleDomReady);
-					};
-					webview.addEventListener("dom-ready", handleDomReady);
-				} else {
-					// For already initialized webviews, load directly
-					webview.loadURL(urlToLoad).catch((err) => {
-						console.error("Failed to load URL:", err);
-						updateTab(activeTabId, { isLoading: false });
-					});
-				}
-			} catch (err) {
-				console.error("Error loading URL:", err);
-				updateTab(activeTabId, { isLoading: false });
-			}
+			// Navigate using the centralized function
+			navigateToUrl(finalUrl);
 		},
-		[activeTabId, currentUrl, updateTab, webviewRefs],
+		[activeTabId, currentUrl, updateTab, navigateToUrl],
 	);
 
 	const handleViewChange = useCallback((view: View) => {
@@ -269,6 +406,7 @@ function Browser() {
 				theme={theme}
 				canGoBack={activeTab?.canGoBack || false}
 				canGoForward={activeTab?.canGoForward || false}
+				canGoForwardToSettings={activeTab?.canGoForwardToSettings || false}
 				onUrlChange={handleUrlChange}
 				onUrlSubmit={handleUrlSubmit}
 				onNavigate={handleNavigationClick}
@@ -278,6 +416,7 @@ function Browser() {
 				urlInputRef={urlInputRef}
 				shouldFocusAndSelect={shouldFocusAndSelect}
 				isError={activeTab?.isError || false}
+				onNavigateTo={navigateToUrl}
 			/>
 
 			<div className="flex-1 flex overflow-hidden">

@@ -7,21 +7,17 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { APP_NAME } from "@/constants/app";
 import { cn } from "@/lib/utils";
 import { MoreVertical, Settings } from "lucide-react";
 
 interface SettingsMenuProps {
-	onViewChange: (view: "webview" | "settings") => void;
-	onUrlChange: (url: string) => void;
+	onNavigateTo: (url: string) => void;
 }
 
-export default function SettingsMenu({
-	onViewChange,
-	onUrlChange,
-}: SettingsMenuProps) {
+export default function SettingsMenu({ onNavigateTo }: SettingsMenuProps) {
 	const handleSettingsClick = () => {
-		onViewChange("settings");
-		onUrlChange("merlin://settings");
+		onNavigateTo(`${APP_NAME.toLowerCase()}://settings`);
 	};
 
 	return (

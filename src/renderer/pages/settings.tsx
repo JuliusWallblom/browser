@@ -30,7 +30,7 @@ export function SettingsPage({ onViewChange, onUrlChange }: SettingsPageProps) {
 				>
 					<ArrowLeft className="h-4 w-4" />
 				</Button>
-				<h1 className="text-3xl font-bold">Merlin Settings</h1>
+				<h1 className="text-3xl font-bold">Settings</h1>
 			</div>
 
 			<div className="space-y-6">
@@ -38,7 +38,7 @@ export function SettingsPage({ onViewChange, onUrlChange }: SettingsPageProps) {
 					<h2 className="text-xl font-semibold">Browser Settings</h2>
 					<div className="space-y-2">
 						<p className="text-secondary">
-							Configure your browsing experience with Merlin.
+							Configure your browsing experience.
 						</p>
 					</div>
 				</section>
@@ -53,7 +53,7 @@ export function SettingsPage({ onViewChange, onUrlChange }: SettingsPageProps) {
 				</section>
 
 				<section className="space-y-4">
-					<h2 className="text-xl font-semibold">About Merlin</h2>
+					<h2 className="text-xl font-semibold">About</h2>
 					<div className="space-y-2">
 						<p className="text-secondary">Version: 1.0.0</p>
 						<p className="text-secondary">

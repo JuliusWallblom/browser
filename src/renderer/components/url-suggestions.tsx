@@ -1,5 +1,6 @@
+import { APP_NAME } from "@/constants/app";
 import { cn } from "@/lib/utils";
-import { Globe, Search } from "lucide-react";
+import { Globe, Search, Settings } from "lucide-react";
 
 // Helper function to check if URL is a Google search
 const isGoogleSearch = (url: string) => {
@@ -51,7 +52,7 @@ export function URLSuggestions({
 
 	return (
 		<div
-			className="-mt-8 absolute top-full left-0 right-0 mt-1 bg-background border rounded-lg rounded-t-none shadow-lg overflow-hidden z-10"
+			className="-mt-8 absolute top-0 left-0 right-0 mt-1 bg-background border rounded-lg rounded-t-none shadow-lg overflow-hidden z-10"
 			onMouseEnter={onSuggestionsMouseEnter}
 			onMouseMove={onSuggestionsMouseMove}
 			onMouseLeave={onSuggestionsMouseLeave}
@@ -63,7 +64,7 @@ export function URLSuggestions({
 					className={cn(
 						"w-full px-3 py-3 flex items-start gap-3 hover:bg-muted text-left",
 						index === selectedSuggestionIndex && "bg-muted",
-						suggestions.indexOf(suggestion) === 0 && "pt-[46px]",
+						suggestions.indexOf(suggestion) === 0 && "pt-[38px]",
 					)}
 					onMouseDown={(e) => e.preventDefault()}
 					onClick={() => onSuggestionClick(suggestion)}
@@ -71,7 +72,9 @@ export function URLSuggestions({
 					onMouseMove={() => onSuggestionMouseMove(suggestion)}
 					onMouseLeave={onSuggestionMouseLeave}
 				>
-					{isGoogleSearch(suggestion.url) ? (
+					{suggestion.url === `${APP_NAME.toLowerCase()}://settings` ? (
+						<Settings className="w-4 h-4 text-muted-foreground" />
+					) : isGoogleSearch(suggestion.url) ? (
 						<Search className="w-4 h-4 text-muted-foreground" />
 					) : suggestion.favicon ? (
 						<img src={suggestion.favicon} alt="" className="w-4 h-4" />

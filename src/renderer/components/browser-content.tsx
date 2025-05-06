@@ -40,6 +40,7 @@ export function BrowserContent({
 						isActive={tab.id === activeTabId}
 						onWebviewRef={handleWebviewRef}
 						updateTab={updateTab}
+						onViewChange={onViewChange}
 					/>
 				))}
 			</div>

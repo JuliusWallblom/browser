@@ -197,7 +197,7 @@ app.on("window-all-closed", () => {
 // Register the protocol scheme before app is ready
 protocol.registerSchemesAsPrivileged([
 	{
-		scheme: "merlin",
+		scheme: APP_NAME.toLowerCase(),
 		privileges: {
 			standard: true,
 			secure: true,
@@ -233,8 +233,8 @@ app
 		}
 
 		// Register as default protocol client
-		if (!app.isDefaultProtocolClient("merlin")) {
-			app.setAsDefaultProtocolClient("merlin");
+		if (!app.isDefaultProtocolClient(APP_NAME.toLowerCase())) {
+			app.setAsDefaultProtocolClient(APP_NAME.toLowerCase());
 		}
 
 		// Set up dock menu for macOS
@@ -249,125 +249,6 @@ app
 			]);
 			(app as Electron.App & { dock: Electron.Dock }).dock.setMenu(dockMenu);
 		}
-
-		// Handle the protocol
-		protocol.handle("merlin", (request) => {
-			const url = new URL(request.url);
-
-			// Base HTML template with Tailwind
-			const baseHtml = (content: string) => `
-				<!DOCTYPE html>
-				<html>
-					<head>
-						<meta charset="UTF-8" />
-						<title>Merlin</title>
-						<script src="https://cdn.tailwindcss.com"></script>
-						<script>
-							tailwind.config = {
-								darkMode: 'class',
-								theme: {
-									extend: {
-										colors: {
-											background: {
-												primary: 'var(--background-primary)',
-												secondary: 'var(--background-secondary)',
-											},
-											border: {
-												primary: 'var(--border-primary)',
-											},
-											primary: 'var(--text-primary)',
-											secondary: 'var(--text-secondary)',
-										},
-									},
-								},
-							}
-						</script>
-						<style>
-							:root {
-								--background-primary: #ffffff;
-								--background-secondary: #f1f5f9;
-								--border-primary: #e2e8f0;
-								--text-primary: #0f172a;
-								--text-secondary: #64748b;
-							}
-							
-							.dark {
-								--background-primary: #0f172a;
-								--background-secondary: #1e293b;
-								--border-primary: #334155;
-								--text-primary: #f8fafc;
-								--text-secondary: #94a3b8;
-							}
-
-							@media (prefers-color-scheme: dark) {
-								:root {
-									--background-primary: #0f172a;
-									--background-secondary: #1e293b;
-									--border-primary: #334155;
-									--text-primary: #f8fafc;
-									--text-secondary: #94a3b8;
-								}
-							}
-						</style>
-					</head>
-					<body class="bg-background-primary">
-						${content}
-					</body>
-				</html>
-			`;
-
-			// You can handle different paths here
-			switch (url.pathname) {
-				case "/settings":
-					return new Response(
-						baseHtml(`
-							<div class="flex flex-col p-8 bg-background-primary text-primary min-h-screen">
-								<h1 class="text-3xl font-bold mb-6">Merlin Settings</h1>
-								
-								<div class="space-y-6">
-									<section class="space-y-4">
-										<h2 class="text-xl font-semibold">Browser Settings</h2>
-										<div class="space-y-2">
-											<p class="text-secondary">Configure your browsing experience with Merlin.</p>
-										</div>
-									</section>
-
-									<section class="space-y-4">
-										<h2 class="text-xl font-semibold">AI Assistant Settings</h2>
-										<div class="space-y-2">
-											<p class="text-secondary">Customize how the AI assistant interacts with your browsing.</p>
-										</div>
-									</section>
-
-									<section class="space-y-4">
-										<h2 class="text-xl font-semibold">About Merlin</h2>
-										<div class="space-y-2">
-											<p class="text-secondary">Version: 1.0.0</p>
-											<p class="text-secondary">A modern browser with built-in AI capabilities.</p>
-										</div>
-									</section>
-								</div>
-							</div>
-						`),
-						{
-							headers: { "content-type": "text/html" },
-						},
-					);
-				default:
-					return new Response(
-						baseHtml(`
-							<div class="flex flex-col items-center justify-center min-h-screen text-primary">
-								<h1 class="text-3xl font-bold mb-4">404 - Not Found</h1>
-								<p class="text-secondary">The requested merlin:// page was not found.</p>
-							</div>
-						`),
-						{
-							status: 404,
-							headers: { "content-type": "text/html" },
-						},
-					);
-			}
-		});
 
 		createWindow();
 		app.on("activate", () => {
