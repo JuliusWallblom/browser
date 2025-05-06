@@ -3,10 +3,16 @@ import { useTabs } from "@/contexts/tabs-context";
 import { usePanels } from "@/hooks/use-panels";
 import { cn } from "@/lib/utils";
 import { ListTree } from "lucide-react";
+import { usePreferences } from "@/contexts/preferences-context";
 
 export function StreamsTabTrigger() {
 	const { isLeftPanelOpen, toggleLeftPanel } = usePanels();
 	const { tabs } = useTabs();
+	const { tabLayout, isLoadingPreferences } = usePreferences();
+
+	if (isLoadingPreferences || tabLayout === "horizontal") {
+		return null;
+	}
 
 	return (
 		<div className={cn("flex items-center gap-2")}>

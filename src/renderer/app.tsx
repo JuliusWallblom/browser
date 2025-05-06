@@ -1,11 +1,15 @@
-import { APP_NAME, DEFAULT_URL } from "@/constants/app";
+import { APP_NAME } from "@/constants/app";
 import { TabsProvider, useTabs } from "@/contexts/tabs-context";
 import { WebviewProvider, useWebviews } from "@/contexts/webview-context";
+import {
+	PreferencesProvider,
+	usePreferences,
+} from "@/contexts/preferences-context";
+import { useTheme } from "@/hooks/use-theme";
 import {
 	SHORTCUTS,
 	useKeyboardShortcuts,
 } from "@/hooks/use-keyboard-shortcuts";
-import { useTheme } from "@/hooks/use-theme";
 import { usePanels } from "@/hooks/use-panels";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Route, MemoryRouter as Router, Routes } from "react-router-dom";
@@ -13,13 +17,16 @@ import AITab from "./components/ai-tab";
 import { BrowserContent } from "./components/browser-content";
 import StreamsTab from "./components/streams-tab";
 import { TitleBar } from "./components/title-bar";
+import { HorizontalTabs } from "./components/horizontal-tabs";
 import type { Tab } from "@/types/tab";
 
 function Browser() {
-	const { theme, cycleTheme } = useTheme();
-	const { tabs, activeTabId, updateTab, addTab, removeTab } = useTabs();
+	const { tabs, activeTabId, updateTab, addTab, removeTab, setActiveTab } =
+		useTabs();
 	const { webviewRefs } = useWebviews();
 	const { isLeftPanelOpen, setLeftPanelOpen } = usePanels();
+	const { tabLayout, isLoadingPreferences } = usePreferences();
+	const { isLoadingTheme } = useTheme();
 	const [currentUrl, setCurrentUrl] = useState("");
 	const urlInputRef = useRef<HTMLInputElement>(null);
 	const [shouldFocusAndSelect, setShouldFocusAndSelect] = useState(false);
@@ -322,9 +329,9 @@ function Browser() {
 		const nextIndex = (currentIndex + 1) % tabs.length;
 		const nextTab = tabs[nextIndex];
 		if (nextTab) {
-			updateTab(nextTab.id, {});
+			setActiveTab(nextTab.id);
 		}
-	}, [activeTabId, tabs, updateTab]);
+	}, [activeTabId, tabs, setActiveTab]);
 
 	const handlePreviousTab = useCallback(() => {
 		if (!activeTabId) return;
@@ -332,9 +339,9 @@ function Browser() {
 		const previousIndex = (currentIndex - 1 + tabs.length) % tabs.length;
 		const previousTab = tabs[previousIndex];
 		if (previousTab) {
-			updateTab(previousTab.id, {});
+			setActiveTab(previousTab.id);
 		}
-	}, [activeTabId, tabs, updateTab]);
+	}, [activeTabId, tabs, setActiveTab]);
 
 	const handleFocusUrlBar = useCallback(() => {
 		urlInputRef.current?.focus();
@@ -349,15 +356,53 @@ function Browser() {
 		{ ...SHORTCUTS.FOCUS_URL_BAR, handler: handleFocusUrlBar },
 		{
 			...SHORTCUTS.TOGGLE_STREAMS_TAB,
-			handler: () => setLeftPanelOpen(!isLeftPanelOpen),
+			handler: () => {
+				if (tabLayout === "vertical") {
+					setLeftPanelOpen(!isLeftPanelOpen);
+				}
+			},
 		},
 	]);
 
 	useEffect(() => {
 		if (activeTab) {
 			setCurrentUrl(activeTab.url);
+			setActiveTab(activeTab.id);
 		}
-	}, [activeTab]);
+	}, [activeTab, setActiveTab]);
+
+	// Effect to signal main process when ready to show
+	useEffect(() => {
+		console.log(
+			`[Renderer] Loading states: preferences=${isLoadingPreferences}, theme=${isLoadingTheme}`,
+		);
+		if (!isLoadingPreferences && !isLoadingTheme) {
+			console.log(
+				"[Renderer] Both loaded. Sending 'renderer-ready-to-show' IPC message via window.electron.",
+			);
+			if (window.electron?.ipcRenderer) {
+				window.electron.ipcRenderer.sendMessage(
+					"renderer-ready-to-show" as Parameters<
+						typeof window.electron.ipcRenderer.sendMessage
+					>[0],
+				);
+			} else {
+				console.error(
+					"[Renderer] window.electron.ipcRenderer is not available. Check preload script exposure.",
+				);
+			}
+		}
+	}, [isLoadingPreferences, isLoadingTheme]);
+
+	if (isLoadingPreferences || isLoadingTheme) {
+		return (
+			<div className="flex flex-col h-screen">
+				<div className="flex-1 flex items-center justify-center">
+					<p>Loading preferences...</p>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="flex flex-col h-screen">
@@ -371,6 +416,8 @@ function Browser() {
 					}
 				`}
 			</style>
+
+			{tabLayout === "horizontal" && <HorizontalTabs onAddTab={handleAddTab} />}
 
 			<TitleBar
 				url={currentUrl}
@@ -392,7 +439,7 @@ function Browser() {
 			/>
 
 			<div className="flex-1 flex overflow-hidden">
-				<StreamsTab />
+				{tabLayout === "vertical" && <StreamsTab />}
 				<BrowserContent />
 				<AITab />
 			</div>
@@ -405,9 +452,11 @@ export default function App() {
 		<Router>
 			<TabsProvider>
 				<WebviewProvider>
-					<Routes>
-						<Route path="/" element={<Browser />} />
-					</Routes>
+					<PreferencesProvider>
+						<Routes>
+							<Route path="/" element={<Browser />} />
+						</Routes>
+					</PreferencesProvider>
 				</WebviewProvider>
 			</TabsProvider>
 		</Router>

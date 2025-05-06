@@ -175,11 +175,14 @@ export default function StreamsTab() {
 									size="icon"
 									className={cn(
 										"h-8 w-4 bg-transparent opacity-0 group-hover:opacity-100",
-										tabs.length === 1 && "hidden",
 									)}
 									onClick={(e) => {
 										e.stopPropagation();
-										removeTab(tab.id);
+										if (tabs.length === 1) {
+											window.electron.ipcRenderer.sendMessage("close-window");
+										} else {
+											removeTab(tab.id);
+										}
 									}}
 									aria-label={`Close tab ${getTabTitle(tab)}`}
 								>

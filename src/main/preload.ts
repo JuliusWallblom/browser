@@ -11,7 +11,8 @@ export type Channels =
 	| "ipc-example"
 	| "webview-control"
 	| "navigation-context-menu"
-	| "navigation-action";
+	| "navigation-action"
+	| "renderer-ready-to-show";
 
 const electronHandler = {
 	ipcRenderer: {

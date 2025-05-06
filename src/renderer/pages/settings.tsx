@@ -1,12 +1,16 @@
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useTheme } from "@/hooks/use-theme";
-import { Moon, Sun } from "lucide-react";
-import { ArrowLeft, Monitor } from "lucide-react";
+import { Moon, Sun, ArrowLeft, Monitor, Rows, Columns } from "lucide-react";
 import React from "react";
+import { usePreferences, type TabLayout } from "@/contexts/preferences-context";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 export function SettingsPage() {
 	const { theme, cycleTheme } = useTheme();
+	const { tabLayout, setTabLayout, isLoadingPreferences } = usePreferences();
+
 	const themeIcon = {
 		system: <Monitor size={16} />,
 		light: <Sun size={16} />,
@@ -23,6 +27,60 @@ export function SettingsPage() {
 						<p className="text-muted-foreground">
 							Configure your browsing experience.
 						</p>
+					</div>
+				</section>
+
+				<section className="space-y-4">
+					<h2 className="text-xl font-semibold">Appearance</h2>
+					<Separator />
+					<div className="space-y-4">
+						<div>
+							<Label className="text-base">Tab Layout</Label>
+							<p className="text-sm text-muted-foreground mb-2">
+								Choose how tabs are displayed.
+							</p>
+							{isLoadingPreferences ? (
+								<p className="text-sm text-muted-foreground">
+									Loading preference...
+								</p>
+							) : (
+								<RadioGroup
+									value={tabLayout}
+									onValueChange={(value) => setTabLayout(value as TabLayout)}
+									className="flex flex-col space-y-1"
+								>
+									<Label
+										htmlFor="vertical-tabs"
+										className="flex items-center space-x-2 p-2 rounded-md hover:bg-accent cursor-pointer"
+									>
+										<RadioGroupItem value="vertical" id="vertical-tabs" />
+										<Rows className="w-4 h-4 mr-2" />
+										<span>Vertical Tabs</span>
+									</Label>
+									<Label
+										htmlFor="horizontal-tabs"
+										className="flex items-center space-x-2 p-2 rounded-md hover:bg-accent cursor-pointer"
+									>
+										<RadioGroupItem value="horizontal" id="horizontal-tabs" />
+										<Columns className="w-4 h-4 mr-2" />
+										<span>Horizontal Tabs</span>
+									</Label>
+								</RadioGroup>
+							)}
+						</div>
+						<div>
+							<Label className="text-base">Theme</Label>
+							<Button
+								size="icon"
+								variant="secondary"
+								type="button"
+								onClick={cycleTheme}
+								className="h-8 w-8 text-foreground non-draggable rounded-full ml-2 align-middle"
+								aria-label="Toggle theme"
+							>
+								{themeIcon}
+							</Button>
+						</div>
 					</div>
 				</section>
 
@@ -44,16 +102,6 @@ export function SettingsPage() {
 						</p>
 					</div>
 				</section>
-				<Button
-					size="icon"
-					variant="secondary"
-					type="button"
-					onClick={cycleTheme}
-					className="h-8 w-8 text-foreground non-draggable rounded-full"
-					aria-label="Toggle theme"
-				>
-					{themeIcon}
-				</Button>
 			</div>
 		</div>
 	);

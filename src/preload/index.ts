@@ -4,7 +4,8 @@ export type Channels =
 	| "ipc-example"
 	| "webview-control"
 	| "navigation-context-menu"
-	| "navigation-action";
+	| "navigation-action"
+	| "close-window";
 
 declare global {
 	interface Window {

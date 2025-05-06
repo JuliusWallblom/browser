@@ -44,6 +44,14 @@ ipcMain.on("ipc-example", async (event, arg) => {
 	event.reply("ipc-example", msgTemplate("pong"));
 });
 
+ipcMain.on("close-window", (event) => {
+	const webContents = event.sender;
+	const win = BrowserWindow.fromWebContents(webContents);
+	if (win) {
+		win.close();
+	}
+});
+
 ipcMain.on("webview-control", (event, action) => {
 	if (action === "stop-aggressive") {
 		const allWebContents = webContents.getAllWebContents();
@@ -135,7 +143,7 @@ const createWindow = async () => {
 			preload:
 				process.env.VITE_PRELOAD_JS_PATH || path.join(__dirname, "preload.js"),
 			webviewTag: true,
-			nodeIntegration: true,
+			nodeIntegration: false,
 			contextIsolation: true,
 			webSecurity: true,
 			spellcheck: true,
@@ -157,23 +165,6 @@ const createWindow = async () => {
 		newWindow.loadFile(path.join(__dirname, "../renderer/index.html"));
 	}
 
-	newWindow.on("ready-to-show", () => {
-		if (!newWindow) {
-			throw new Error('"newWindow" is not defined');
-		}
-		if (process.env.START_MINIMIZED) {
-			newWindow.minimize();
-		} else {
-			newWindow.show();
-		}
-		// Set title after window is shown
-		newWindow.setTitle(APP_NAME);
-	});
-
-	newWindow.on("closed", () => {
-		windows.delete(newWindow);
-	});
-
 	const menuBuilder = new MenuBuilder(newWindow, createWindow);
 	menuBuilder.buildMenu();
 
@@ -181,6 +172,21 @@ const createWindow = async () => {
 	newWindow.webContents.setWindowOpenHandler((edata) => {
 		shell.openExternal(edata.url);
 		return { action: "deny" };
+	});
+
+	// Listen for the renderer to signal it's ready
+	ipcMain.on("renderer-ready-to-show", (event, windowId) => {
+		const targetWindow = windows.values().next().value; // Assuming one main window for now
+		// A more robust way would be to match windowId if you pass it from renderer
+		if (targetWindow) {
+			if (process.env.START_MINIMIZED) {
+				targetWindow.minimize();
+			} else {
+				targetWindow.show();
+			}
+			// Set title after window is shown
+			targetWindow.setTitle(APP_NAME);
+		}
 	});
 
 	return newWindow;

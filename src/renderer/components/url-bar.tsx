@@ -496,9 +496,9 @@ export function URLBar({
 	return (
 		<form
 			onSubmit={handleSubmit}
-			className={cn("flex-1 flex items-center non-draggable relative w-full")}
+			className={cn("flex items-center justify-center relative w-full")}
 		>
-			<div className="flex-1 relative h-7">
+			<div className="non-draggable flex-1 relative h-7 flex items-center w-full">
 				<div
 					className={cn(
 						"absolute left-1.5 top-1/2 -translate-y-1/2 w-4 h-4 z-[51]",
@@ -516,7 +516,7 @@ export function URLBar({
 					onBlur={handleBlur}
 					onMouseDown={handleMouseDown}
 					onKeyDown={handleKeyDown}
-					className="relative w-full h-full pl-7 pr-2 rounded-full text-sm bg-muted border-none z-50"
+					className="min-w-[165px] relative w-full h-full pl-7 pr-2 rounded-lg text-sm bg-muted border-none z-50"
 					placeholder="Search or enter URL"
 				/>
 				<URLSuggestions

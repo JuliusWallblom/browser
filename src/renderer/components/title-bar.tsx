@@ -7,6 +7,7 @@ import { NavigationControls } from "./navigation-controls";
 import SettingsMenu from "./settings-menu";
 import { StreamsTabTrigger } from "./streams-tab-trigger";
 import { URLBar } from "./url-bar";
+import { usePreferences } from "@/contexts/preferences-context";
 
 interface TitleBarProps {
 	url: string;
@@ -47,13 +48,15 @@ export function TitleBar({
 	isError,
 	onNavigateTo,
 }: TitleBarProps) {
+	const { tabLayout } = usePreferences();
+
 	return (
 		<div
 			className={cn(
-				"h-10 flex items-center justify-start gap-2 px-2 bg-background draggable",
+				"h-10 flex w-full items-center justify-start gap-2 px-2 bg-background draggable",
 			)}
 		>
-			<div className="w-[65px] shrink-0" />
+			{tabLayout === "vertical" && <div className="w-[65px] shrink-0" />}
 			<StreamsTabTrigger />
 			<NavigationControls
 				onNavigate={onNavigate}
@@ -64,7 +67,7 @@ export function TitleBar({
 				activeUrl={activeUrl}
 				currentView={currentView}
 			/>
-			<div className="flex items-center gap-2 w-full min-w-[146px]">
+			<div className="flex flex-1 items-center justify-start gap-2 w-full">
 				<URLBar
 					url={url}
 					favicon={favicon}
@@ -76,17 +79,18 @@ export function TitleBar({
 					shouldFocusAndSelect={shouldFocusAndSelect}
 					isError={isError}
 				/>
-				<Button
-					variant="ghost"
-					size="icon"
-					className="h-6 w-6 p-1 rounded-full non-draggable z-40 text-muted-foreground"
-					onClick={onAddTab}
-					aria-label="New Tab"
-				>
-					<Plus className="!w-4 !h-4" />
-				</Button>
+				{tabLayout === "vertical" && (
+					<Button
+						variant="ghost"
+						size="icon"
+						className="h-6 w-6 p-1 non-draggable z-40 text-muted-foreground"
+						onClick={onAddTab}
+						aria-label="New Tab"
+					>
+						<Plus className="!w-4 !h-4" />
+					</Button>
+				)}
 			</div>
-			<div className="w-[20%]" />
 			<AITabTrigger />
 			<SettingsMenu onNavigateTo={onNavigateTo} />
 		</div>
