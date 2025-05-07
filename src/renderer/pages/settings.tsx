@@ -6,10 +6,17 @@ import React from "react";
 import { usePreferences, type TabLayout } from "@/contexts/preferences-context";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Switch } from "@/components/ui/switch";
 
 export function SettingsPage() {
 	const { theme, cycleTheme } = useTheme();
-	const { tabLayout, setTabLayout, isLoadingPreferences } = usePreferences();
+	const {
+		tabLayout,
+		setTabLayout,
+		previewTabs,
+		setPreviewTabs,
+		isLoadingPreferences,
+	} = usePreferences();
 
 	const themeIcon = {
 		system: <Monitor size={16} />,
@@ -80,6 +87,28 @@ export function SettingsPage() {
 							>
 								{themeIcon}
 							</Button>
+						</div>
+						<div>
+							<Label className="text-base">Preview Tabs</Label>
+							<p className="text-sm text-muted-foreground mb-2">
+								Enable or disable tab previews on hover.
+							</p>
+							{isLoadingPreferences ? (
+								<p className="text-sm text-muted-foreground">
+									Loading preference...
+								</p>
+							) : (
+								<div className="flex items-center space-x-2">
+									<Switch
+										id="preview-tabs-switch"
+										checked={previewTabs}
+										onCheckedChange={setPreviewTabs}
+									/>
+									<Label htmlFor="preview-tabs-switch">
+										{previewTabs ? "Enabled" : "Disabled"}
+									</Label>
+								</div>
+							)}
 						</div>
 					</div>
 				</section>

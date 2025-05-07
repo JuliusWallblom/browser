@@ -1,0 +1,580 @@
+{
+    "extension": "linecounter",
+    "version": "0.2.7",
+    "workspace": "/Users/j/Developer/manta",
+    "linecount": [
+        {
+            "version": "0.2.7",
+            "counttime": "2025-05-07 09:13:36",
+            "filesum": 82,
+            "codesum": 37460,
+            "commentsum": 1011,
+            "blanksum": 819,
+            "statistics": {
+                ".ts": {
+                    "code": 1453,
+                    "comment": 110,
+                    "blank": 169
+                },
+                ".tsx": {
+                    "code": 2993,
+                    "comment": 130,
+                    "blank": 321
+                },
+                ".css": {
+                    "code": 820,
+                    "comment": 166,
+                    "blank": 171
+                },
+                ".js": {
+                    "code": 12031,
+                    "comment": 598,
+                    "blank": 23
+                },
+                "": {
+                    "code": 36,
+                    "comment": 1,
+                    "blank": 7
+                },
+                ".json": {
+                    "code": 20010,
+                    "comment": 0,
+                    "blank": 128
+                },
+                ".plist": {
+                    "code": 8,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".html": {
+                    "code": 12,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".svg": {
+                    "code": 23,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".mjs": {
+                    "code": 30,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".yaml": {
+                    "code": 44,
+                    "comment": 6,
+                    "blank": 0
+                }
+            },
+            "filelist": [
+                {
+                    "blank": 0,
+                    "code": 12,
+                    "comment": 0,
+                    "filename": ".gitattributes"
+                },
+                {
+                    "blank": 7,
+                    "code": 24,
+                    "comment": 1,
+                    "filename": ".gitignore"
+                },
+                {
+                    "blank": 8,
+                    "code": 27,
+                    "comment": 0,
+                    "filename": "assets/assets.d.ts"
+                },
+                {
+                    "blank": 0,
+                    "code": 8,
+                    "comment": 0,
+                    "filename": "assets/entitlements.mac.plist"
+                },
+                {
+                    "filename": "assets/icon.icns",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "assets/icon.ico",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "assets/icon.png",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 0,
+                    "code": 23,
+                    "comment": 0,
+                    "filename": "assets/icon.svg"
+                },
+                {
+                    "filename": "assets/icons/1024x1024.png",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "assets/icons/128x128.png",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "assets/icons/16x16.png",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "assets/icons/24x24.png",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "assets/icons/256x256.png",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "assets/icons/32x32.png",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "assets/icons/48x48.png",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "assets/icons/512x512.png",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "assets/icons/64x64.png",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "assets/icons/96x96.png",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "assets/manta_icon.png",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 0,
+                    "code": 30,
+                    "comment": 0,
+                    "filename": "biome.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 21,
+                    "comment": 0,
+                    "filename": "components.json"
+                },
+                {
+                    "blank": 22,
+                    "code": 11915,
+                    "comment": 597,
+                    "filename": "dist-electron/main.js"
+                },
+                {
+                    "blank": 0,
+                    "code": 30,
+                    "comment": 0,
+                    "filename": "dist-electron/preload.js"
+                },
+                {
+                    "blank": 0,
+                    "code": 30,
+                    "comment": 0,
+                    "filename": "dist-electron/preload.mjs"
+                },
+                {
+                    "blank": 0,
+                    "code": 12,
+                    "comment": 0,
+                    "filename": "index.html"
+                },
+                {
+                    "blank": 114,
+                    "code": 19646,
+                    "comment": 0,
+                    "filename": "package-lock.json"
+                },
+                {
+                    "blank": 13,
+                    "code": 252,
+                    "comment": 0,
+                    "filename": "package.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 6,
+                    "comment": 0,
+                    "filename": "postcss.config.js"
+                },
+                {
+                    "blank": 0,
+                    "code": 14,
+                    "comment": 0,
+                    "filename": "release/app/package-lock.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 18,
+                    "comment": 0,
+                    "filename": "release/app/package.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 44,
+                    "comment": 6,
+                    "filename": "release/build/builder-effective-config.yaml"
+                },
+                {
+                    "blank": 5,
+                    "code": 51,
+                    "comment": 0,
+                    "filename": "src/components/ui/button.tsx"
+                },
+                {
+                    "blank": 17,
+                    "code": 181,
+                    "comment": 0,
+                    "filename": "src/components/ui/context-menu.tsx"
+                },
+                {
+                    "blank": 17,
+                    "code": 181,
+                    "comment": 0,
+                    "filename": "src/components/ui/dropdown-menu.tsx"
+                },
+                {
+                    "blank": 3,
+                    "code": 19,
+                    "comment": 0,
+                    "filename": "src/components/ui/input.tsx"
+                },
+                {
+                    "blank": 5,
+                    "code": 19,
+                    "comment": 0,
+                    "filename": "src/components/ui/label.tsx"
+                },
+                {
+                    "blank": 4,
+                    "code": 38,
+                    "comment": 0,
+                    "filename": "src/components/ui/radio-group.tsx"
+                },
+                {
+                    "blank": 4,
+                    "code": 42,
+                    "comment": 0,
+                    "filename": "src/components/ui/scroll-area.tsx"
+                },
+                {
+                    "blank": 3,
+                    "code": 26,
+                    "comment": 0,
+                    "filename": "src/components/ui/separator.tsx"
+                },
+                {
+                    "blank": 0,
+                    "code": 2,
+                    "comment": 0,
+                    "filename": "src/constants/app.ts"
+                },
+                {
+                    "blank": 11,
+                    "code": 72,
+                    "comment": 2,
+                    "filename": "src/contexts/preferences-context.tsx"
+                },
+                {
+                    "blank": 10,
+                    "code": 75,
+                    "comment": 1,
+                    "filename": "src/contexts/tabs-context.tsx"
+                },
+                {
+                    "blank": 5,
+                    "code": 21,
+                    "comment": 0,
+                    "filename": "src/contexts/webview-context.tsx"
+                },
+                {
+                    "blank": 13,
+                    "code": 127,
+                    "comment": 4,
+                    "filename": "src/hooks/use-keyboard-shortcuts.ts"
+                },
+                {
+                    "blank": 3,
+                    "code": 25,
+                    "comment": 0,
+                    "filename": "src/hooks/use-panels.ts"
+                },
+                {
+                    "blank": 14,
+                    "code": 73,
+                    "comment": 12,
+                    "filename": "src/hooks/use-theme.ts"
+                },
+                {
+                    "blank": 21,
+                    "code": 98,
+                    "comment": 26,
+                    "filename": "src/lib/history.ts"
+                },
+                {
+                    "blank": 14,
+                    "code": 87,
+                    "comment": 8,
+                    "filename": "src/lib/preferences-db.ts"
+                },
+                {
+                    "blank": 1,
+                    "code": 5,
+                    "comment": 0,
+                    "filename": "src/lib/utils.ts"
+                },
+                {
+                    "blank": 5,
+                    "code": 27,
+                    "comment": 1,
+                    "filename": "src/main/index.ts"
+                },
+                {
+                    "blank": 52,
+                    "code": 422,
+                    "comment": 40,
+                    "filename": "src/main/main.ts"
+                },
+                {
+                    "blank": 15,
+                    "code": 312,
+                    "comment": 1,
+                    "filename": "src/main/menu.ts"
+                },
+                {
+                    "blank": 5,
+                    "code": 45,
+                    "comment": 2,
+                    "filename": "src/main/preload.ts"
+                },
+                {
+                    "blank": 6,
+                    "code": 64,
+                    "comment": 0,
+                    "filename": "src/preload/index.ts"
+                },
+                {
+                    "blank": 9,
+                    "code": 66,
+                    "comment": 8,
+                    "filename": "src/preload/webview-preload.ts"
+                },
+                {
+                    "blank": 42,
+                    "code": 420,
+                    "comment": 10,
+                    "filename": "src/renderer/app.tsx"
+                },
+                {
+                    "blank": 2,
+                    "code": 23,
+                    "comment": 0,
+                    "filename": "src/renderer/components/ai-tab-trigger.tsx"
+                },
+                {
+                    "blank": 1,
+                    "code": 17,
+                    "comment": 0,
+                    "filename": "src/renderer/components/ai-tab.tsx"
+                },
+                {
+                    "blank": 4,
+                    "code": 46,
+                    "comment": 2,
+                    "filename": "src/renderer/components/browser-content.tsx"
+                },
+                {
+                    "blank": 60,
+                    "code": 415,
+                    "comment": 33,
+                    "filename": "src/renderer/components/browser-webview.tsx"
+                },
+                {
+                    "blank": 1,
+                    "code": 11,
+                    "comment": 0,
+                    "filename": "src/renderer/components/error-favicon.tsx"
+                },
+                {
+                    "blank": 3,
+                    "code": 53,
+                    "comment": 0,
+                    "filename": "src/renderer/components/error-page.tsx"
+                },
+                {
+                    "blank": 4,
+                    "code": 86,
+                    "comment": 2,
+                    "filename": "src/renderer/components/horizontal-tabs.tsx"
+                },
+                {
+                    "blank": 8,
+                    "code": 112,
+                    "comment": 0,
+                    "filename": "src/renderer/components/navigation-controls.tsx"
+                },
+                {
+                    "blank": 3,
+                    "code": 40,
+                    "comment": 1,
+                    "filename": "src/renderer/components/settings-menu.tsx"
+                },
+                {
+                    "blank": 11,
+                    "code": 68,
+                    "comment": 1,
+                    "filename": "src/renderer/components/side-panel.tsx"
+                },
+                {
+                    "blank": 3,
+                    "code": 41,
+                    "comment": 0,
+                    "filename": "src/renderer/components/streams-tab-trigger.tsx"
+                },
+                {
+                    "blank": 17,
+                    "code": 174,
+                    "comment": 7,
+                    "filename": "src/renderer/components/streams-tab.tsx"
+                },
+                {
+                    "blank": 4,
+                    "code": 31,
+                    "comment": 0,
+                    "filename": "src/renderer/components/theme-toggle.tsx"
+                },
+                {
+                    "blank": 3,
+                    "code": 95,
+                    "comment": 0,
+                    "filename": "src/renderer/components/title-bar.tsx"
+                },
+                {
+                    "blank": 57,
+                    "code": 431,
+                    "comment": 67,
+                    "filename": "src/renderer/components/url-bar.tsx"
+                },
+                {
+                    "blank": 6,
+                    "code": 93,
+                    "comment": 2,
+                    "filename": "src/renderer/components/url-suggestions.tsx"
+                },
+                {
+                    "blank": 2,
+                    "code": 10,
+                    "comment": 2,
+                    "filename": "src/renderer/index.tsx"
+                },
+                {
+                    "blank": 6,
+                    "code": 102,
+                    "comment": 0,
+                    "filename": "src/renderer/pages/settings.tsx"
+                },
+                {
+                    "blank": 1,
+                    "code": 6,
+                    "comment": 1,
+                    "filename": "src/renderer/preload.d.ts"
+                },
+                {
+                    "blank": 5,
+                    "code": 104,
+                    "comment": 1,
+                    "filename": "src/styles/index.css"
+                },
+                {
+                    "blank": 166,
+                    "code": 716,
+                    "comment": 165,
+                    "filename": "src/styles/output.css"
+                },
+                {
+                    "blank": 1,
+                    "code": 34,
+                    "comment": 0,
+                    "filename": "src/types/electron.d.ts"
+                },
+                {
+                    "blank": 0,
+                    "code": 14,
+                    "comment": 0,
+                    "filename": "src/types/tab.ts"
+                },
+                {
+                    "blank": 1,
+                    "code": 80,
+                    "comment": 1,
+                    "filename": "tailwind.config.js"
+                },
+                {
+                    "blank": 1,
+                    "code": 29,
+                    "comment": 0,
+                    "filename": "tsconfig.json"
+                },
+                {
+                    "blank": 1,
+                    "code": 19,
+                    "comment": 7,
+                    "filename": "vite.config.ts"
+                }
+            ]
+        }
+    ]
+}

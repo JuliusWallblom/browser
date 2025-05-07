@@ -30,12 +30,14 @@ function Browser() {
 	const [currentUrl, setCurrentUrl] = useState("");
 	const urlInputRef = useRef<HTMLInputElement>(null);
 	const [shouldFocusAndSelect, setShouldFocusAndSelect] = useState(false);
+	const [blurUrlBarOnNextActivation, setBlurUrlBarOnNextActivation] =
+		useState(false);
 
 	// Initialize first tab if none exist
 	useEffect(() => {
 		if (tabs.length === 0) {
 			addTab({
-				url: "",
+				url: "about:blank",
 				title: "New Tab",
 				isLoading: false,
 				canGoBack: false,
@@ -71,6 +73,9 @@ function Browser() {
 				}
 
 				if (action === "forward") {
+					updateTab(activeTabId, {
+						isLoading: true,
+					});
 					const currentUrlBeforeNavToSettings = activeTab.url;
 
 					if (activeTab.canGoForwardToSettings && !webview.canGoForward()) {
@@ -96,6 +101,7 @@ function Browser() {
 					if (webview.canGoForward()) {
 						webview.goForward();
 						updateTab(activeTabId, {
+							isLoading: true,
 							canGoForwardToSettings: false,
 							view: "webview",
 						});
@@ -111,46 +117,82 @@ function Browser() {
 					case "back":
 						if (wasOnSettingsPage) {
 							const urlToLoad = activeTab.previousUrl || "about:blank";
-							const tabUpdates: Partial<Tab> = {
-								url: urlToLoad,
-								isLoading: urlToLoad !== "about:blank",
-								canGoForwardToSettings: true,
-								previousUrl: undefined,
-								view: "webview",
-							};
+							const webview = webviewRefs.current.get(activeTabId);
 
-							if (urlToLoad === "about:blank") {
-								tabUpdates.canGoBack = false;
-								tabUpdates.canGoForward = false;
-								tabUpdates.title = "New Tab";
-								tabUpdates.favicon = undefined;
+							if (!webview) {
+								console.error(
+									`[Renderer] Back from settings: No webview found for activeTabId: ${activeTabId}. Falling back to about:blank state.`,
+								);
+								updateTab(activeTabId, {
+									url: "about:blank",
+									title: "New Tab",
+									isLoading: false,
+									canGoBack: false,
+									canGoForward: false,
+									canGoForwardToSettings: true,
+									view: "webview",
+									previousUrl: undefined,
+									isError: true,
+									favicon: undefined,
+								});
+								return;
 							}
 
-							updateTab(activeTabId, tabUpdates);
+							if (urlToLoad === "about:blank") {
+								updateTab(activeTabId, {
+									url: "about:blank",
+									title: "New Tab",
+									isLoading: false,
+									canGoBack: false,
+									canGoForward: false,
+									canGoForwardToSettings: true,
+									view: "webview",
+									previousUrl: undefined,
+									isError: false,
+									favicon: undefined,
+								});
+								// Ensure the webview actually displays about:blank
+								webview.src = "about:blank";
+							} else {
+								// Navigating back to a real URL from settings
+								updateTab(activeTabId, {
+									url: urlToLoad,
+									isLoading: true,
+									canGoForwardToSettings: true,
+									view: "webview",
+									previousUrl: undefined,
+									isError: false,
+									// Title, favicon, canGoBack, canGoForward will be updated by did-navigate
+								});
 
-							requestAnimationFrame(() => {
-								const currentWebview = webviewRefs.current.get(activeTabId);
-								if (currentWebview) {
-									try {
-										if (urlToLoad === "about:blank") {
-											currentWebview.stop();
-											currentWebview.loadURL("about:blank");
-										} else {
-											currentWebview.loadURL(urlToLoad);
-										}
-									} catch (err) {
-										console.error(`Error loading ${urlToLoad} (rAF):`, err);
-										if (tabUpdates.isLoading) {
-											updateTab(activeTabId, { isLoading: false });
-										}
-									}
+								webview.loadURL(urlToLoad).catch((err) => {
+									console.error(
+										`[Renderer] Back from settings: Failed to load URL ${urlToLoad}:`,
+										err,
+									);
+									updateTab(activeTabId, {
+										isLoading: false,
+										isError: true,
+										title: "Navigation Error",
+									});
+								});
+
+								try {
+									webview.setAudioMuted(false);
+								} catch (err) {
+									console.error(
+										"[Renderer] Back from settings: Error unmuting media:",
+										err,
+									);
 								}
-							});
+							}
 						} else {
-							updateTab(activeTabId, {
-								isLoading: false,
-							});
-							webview.goBack();
+							// Standard "back" not from settings page
+							const webview = webviewRefs.current.get(activeTabId);
+							if (webview?.canGoBack()) {
+								// Check if webview exists and can go back
+								webview.goBack();
+							}
 						}
 						break;
 					case "refresh":
@@ -191,25 +233,105 @@ function Browser() {
 		(urlToLoad: string) => {
 			if (!activeTabId || !activeTab) return;
 
+			const handleLoadURLError = (err: Error, tabId: string | null) => {
+				console.error("Failed to load URL:", err);
+				if (tabId) {
+					updateTab(tabId, {
+						isLoading: false,
+						isError: true,
+						canGoForwardToSettings: false,
+						// title: "Navigation Error" // Optional: consider updating title
+					});
+				}
+			};
+
 			if (urlToLoad === `${APP_NAME.toLowerCase()}://settings`) {
-				const currentUrlBeforeNav = activeTab.url;
-				updateTab(activeTabId, {
-					url: `${APP_NAME.toLowerCase()}://settings`,
-					title: "Settings",
-					isLoading: false,
-					isError: false,
-					favicon: undefined,
-					canGoForward: false,
-					canGoBack: true,
-					canGoForwardToSettings: false,
-					view: "settings",
-					previousUrl:
-						currentUrlBeforeNav === `${APP_NAME.toLowerCase()}://settings`
-							? activeTab.previousUrl
-							: currentUrlBeforeNav,
-				});
-				return;
+				const settingsWebView = webviewRefs.current.get(activeTabId);
+
+				const transitionToSettingsUI = () => {
+					const currentUrlBeforeNav = activeTab.url;
+					updateTab(activeTabId, {
+						url: `${APP_NAME.toLowerCase()}://settings`,
+						title: "Settings",
+						isLoading: false,
+						isError: false,
+						favicon: undefined,
+						canGoForward: false,
+						canGoBack: true,
+						canGoForwardToSettings: false,
+						view: "settings",
+						previousUrl:
+							currentUrlBeforeNav === `${APP_NAME.toLowerCase()}://settings`
+								? activeTab.previousUrl
+								: currentUrlBeforeNav,
+					});
+				};
+
+				if (activeTab.url === "about:blank" || !settingsWebView) {
+					console.log(
+						`[Renderer] Settings: Current URL is '${activeTab.url}' or no webview. Transitioning to settings UI directly for tabId: ${activeTabId}.`,
+					);
+					transitionToSettingsUI();
+				} else {
+					console.log(
+						`[Renderer] Settings: Current URL is '${activeTab.url}'. Attempting media ops before transitioning for tabId: ${activeTabId}.`,
+					);
+					try {
+						settingsWebView.setAudioMuted(true);
+						settingsWebView.executeJavaScript(
+							"document.querySelectorAll('video, audio').forEach(media => media.pause())",
+						);
+						transitionToSettingsUI();
+					} catch (err) {
+						if (
+							err instanceof Error &&
+							err.message?.includes("The WebView must be attached")
+						) {
+							console.warn(
+								`[Renderer] Settings: Webview for '${activeTab.url}' (tabId: ${activeTabId}) not fully ready for media ops. Deferring. Error: ${err.message}`,
+							);
+							const handleDomReadyForSettingsMediaOps = () => {
+								settingsWebView.removeEventListener(
+									"dom-ready",
+									handleDomReadyForSettingsMediaOps,
+								);
+								const currentWV = webviewRefs.current.get(activeTabId);
+								if (currentWV === settingsWebView) {
+									try {
+										currentWV.setAudioMuted(true);
+										currentWV.executeJavaScript(
+											"document.querySelectorAll('video, audio').forEach(media => media.pause())",
+										);
+									} catch (deferredErr) {
+										console.error(
+											`[Renderer] Settings: Error in deferred media ops for tabId: ${activeTabId}:`,
+											deferredErr,
+										);
+									}
+								} else {
+									console.warn(
+										`[Renderer] Settings: Webview changed for tabId: ${activeTabId} before deferred media ops could run.`,
+									);
+								}
+								transitionToSettingsUI();
+							};
+							settingsWebView.addEventListener(
+								"dom-ready",
+								handleDomReadyForSettingsMediaOps,
+							);
+						} else {
+							console.error(
+								`[Renderer] Settings: Non-DOM-ready error during media ops for tabId: ${activeTabId}:`,
+								err,
+							);
+							transitionToSettingsUI();
+						}
+					}
+				}
+				return; // End of settings navigation path
 			}
+
+			const webview = webviewRefs.current.get(activeTabId);
 
 			const tabUpdates: Partial<Tab> = {
 				url: urlToLoad,
@@ -220,36 +342,45 @@ function Browser() {
 
 			updateTab(activeTabId, tabUpdates);
 
-			const webview = webviewRefs.current.get(activeTabId);
 			if (!webview) return;
 
 			try {
 				if (webview.src === "") {
 					webview.src = "about:blank";
 					const handleDomReady = () => {
-						webview.loadURL(urlToLoad).catch((err) => {
-							console.error("Failed to load URL:", err);
-							updateTab(activeTabId, {
-								isLoading: false,
-								canGoForwardToSettings: false,
-							});
-						});
 						webview.removeEventListener("dom-ready", handleDomReady);
+						// Check if the webview instance is still valid and refers to the active tab's webview
+						const currentWebviewStillMatches =
+							webviewRefs.current.get(activeTabId) === webview;
+						if (currentWebviewStillMatches) {
+							webview
+								.loadURL(urlToLoad)
+								.catch((err) => handleLoadURLError(err, activeTabId));
+						} else {
+							console.warn(
+								"Webview became invalid or changed before URL could be loaded in dom-ready.",
+							);
+							if (activeTabId) {
+								updateTab(activeTabId, {
+									isLoading: false,
+									isError: true,
+									canGoForwardToSettings: false,
+									title: "Navigation Cancelled",
+								});
+							}
+						}
 					};
 					webview.addEventListener("dom-ready", handleDomReady);
 				} else {
-					webview.loadURL(urlToLoad).catch((err) => {
-						console.error("Failed to load URL:", err);
-						updateTab(activeTabId, {
-							isLoading: false,
-							canGoForwardToSettings: false,
-						});
-					});
+					webview
+						.loadURL(urlToLoad)
+						.catch((err) => handleLoadURLError(err, activeTabId));
 				}
 			} catch (err) {
-				console.error("Error loading URL:", err);
+				console.error("Error preparing to load URL:", err);
 				updateTab(activeTabId, {
 					isLoading: false,
+					isError: true,
 					canGoForwardToSettings: false,
 				});
 			}
@@ -289,6 +420,11 @@ function Browser() {
 	);
 
 	const handleAddTab = useCallback(() => {
+		// Clear selection in the current URL bar (soon to be old tab)
+		if (urlInputRef.current) {
+			urlInputRef.current.selectionStart = urlInputRef.current.selectionEnd;
+		}
+
 		setCurrentUrl("");
 		addTab({
 			url: "about:blank",
@@ -308,17 +444,9 @@ function Browser() {
 		}
 	}, [shouldFocusAndSelect]);
 
-	useEffect(() => {
-		if (currentUrl === "") {
-			setTimeout(() => {
-				urlInputRef.current?.focus();
-				urlInputRef.current?.select();
-			}, 0);
-		}
-	}, [currentUrl]);
-
 	const handleCloseTab = useCallback(() => {
 		if (activeTabId) {
+			setBlurUrlBarOnNextActivation(true);
 			removeTab(activeTabId);
 		}
 	}, [activeTabId, removeTab]);
@@ -367,9 +495,16 @@ function Browser() {
 	useEffect(() => {
 		if (activeTab) {
 			setCurrentUrl(activeTab.url);
-			setActiveTab(activeTab.id);
+
+			if (blurUrlBarOnNextActivation) {
+				if (urlInputRef.current) {
+					urlInputRef.current.blur();
+					urlInputRef.current.selectionStart = urlInputRef.current.selectionEnd;
+				}
+				setBlurUrlBarOnNextActivation(false);
+			}
 		}
-	}, [activeTab, setActiveTab]);
+	}, [activeTab, blurUrlBarOnNextActivation]);
 
 	// Effect to signal main process when ready to show
 	useEffect(() => {
@@ -393,16 +528,6 @@ function Browser() {
 			}
 		}
 	}, [isLoadingPreferences, isLoadingTheme]);
-
-	if (isLoadingPreferences || isLoadingTheme) {
-		return (
-			<div className="flex flex-col h-screen">
-				<div className="flex-1 flex items-center justify-center">
-					<p>Loading preferences...</p>
-				</div>
-			</div>
-		);
-	}
 
 	return (
 		<div className="flex flex-col h-screen">

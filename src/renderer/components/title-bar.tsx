@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Plus } from "lucide-react";
+import { Plus, Shield, ShieldCheck } from "lucide-react";
 import type { RefObject } from "react";
 import { AITabTrigger } from "./ai-tab-trigger";
 import { NavigationControls } from "./navigation-controls";
@@ -53,7 +53,7 @@ export function TitleBar({
 	return (
 		<div
 			className={cn(
-				"h-10 flex w-full items-center justify-start gap-2 px-2 bg-background draggable",
+				"h-[41px] flex w-full items-center justify-start gap-2 px-2 border-b bg-background draggable",
 			)}
 		>
 			{tabLayout === "vertical" && <div className="w-[65px] shrink-0" />}
@@ -91,8 +91,8 @@ export function TitleBar({
 					</Button>
 				)}
 			</div>
-			<AITabTrigger />
 			<SettingsMenu onNavigateTo={onNavigateTo} />
+			<AITabTrigger />
 		</div>
 	);
 }

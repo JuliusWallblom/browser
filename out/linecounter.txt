@@ -1,0 +1,109 @@
+===============================================================================
+EXTENSION NAME : linecounter
+EXTENSION VERSION : 0.2.7
+-------------------------------------------------------------------------------
+count time : 2025-05-07 09:13:36
+count workspace : /Users/j/Developer/manta
+total files : 82
+total code lines : 37460
+total comment lines : 1011
+total blank lines : 819
+
+    statistics
+   |      extension|     total code|  total comment|    total blank|percent|
+   -------------------------------------------------------------------------
+   |            .ts|           1453|            110|            169|    3.9|
+   |           .tsx|           2993|            130|            321|    8.0|
+   |           .css|            820|            166|            171|    2.2|
+   |            .js|          12031|            598|             23|     32|
+   |               |             36|              1|              7|  0.096|
+   |          .json|          20010|              0|            128|     53|
+   |         .plist|              8|              0|              0|  0.021|
+   |          .html|             12|              0|              0|  0.032|
+   |           .svg|             23|              0|              0|  0.061|
+   |           .mjs|             30|              0|              0|  0.080|
+   |          .yaml|             44|              6|              0|   0.12|
+   -------------------------------------------------------------------------
+.gitattributes, code is 12, comment is 0, blank is 0.
+.gitignore, code is 24, comment is 1, blank is 7.
+assets/assets.d.ts, code is 27, comment is 0, blank is 8.
+assets/entitlements.mac.plist, code is 8, comment is 0, blank is 0.
+assets/icon.icns, it is a binary file.
+assets/icon.ico, it is a binary file.
+assets/icon.png, it is a binary file.
+assets/icon.svg, code is 23, comment is 0, blank is 0.
+assets/icons/1024x1024.png, it is a binary file.
+assets/icons/128x128.png, it is a binary file.
+assets/icons/16x16.png, it is a binary file.
+assets/icons/24x24.png, it is a binary file.
+assets/icons/256x256.png, it is a binary file.
+assets/icons/32x32.png, it is a binary file.
+assets/icons/48x48.png, it is a binary file.
+assets/icons/512x512.png, it is a binary file.
+assets/icons/64x64.png, it is a binary file.
+assets/icons/96x96.png, it is a binary file.
+assets/manta_icon.png, it is a binary file.
+biome.json, code is 30, comment is 0, blank is 0.
+components.json, code is 21, comment is 0, blank is 0.
+dist-electron/main.js, code is 11915, comment is 597, blank is 22.
+dist-electron/preload.js, code is 30, comment is 0, blank is 0.
+dist-electron/preload.mjs, code is 30, comment is 0, blank is 0.
+index.html, code is 12, comment is 0, blank is 0.
+package-lock.json, code is 19646, comment is 0, blank is 114.
+package.json, code is 252, comment is 0, blank is 13.
+postcss.config.js, code is 6, comment is 0, blank is 0.
+release/app/package-lock.json, code is 14, comment is 0, blank is 0.
+release/app/package.json, code is 18, comment is 0, blank is 0.
+release/build/builder-effective-config.yaml, code is 44, comment is 6, blank is 0.
+src/components/ui/button.tsx, code is 51, comment is 0, blank is 5.
+src/components/ui/context-menu.tsx, code is 181, comment is 0, blank is 17.
+src/components/ui/dropdown-menu.tsx, code is 181, comment is 0, blank is 17.
+src/components/ui/input.tsx, code is 19, comment is 0, blank is 3.
+src/components/ui/label.tsx, code is 19, comment is 0, blank is 5.
+src/components/ui/radio-group.tsx, code is 38, comment is 0, blank is 4.
+src/components/ui/scroll-area.tsx, code is 42, comment is 0, blank is 4.
+src/components/ui/separator.tsx, code is 26, comment is 0, blank is 3.
+src/constants/app.ts, code is 2, comment is 0, blank is 0.
+src/contexts/preferences-context.tsx, code is 72, comment is 2, blank is 11.
+src/contexts/tabs-context.tsx, code is 75, comment is 1, blank is 10.
+src/contexts/webview-context.tsx, code is 21, comment is 0, blank is 5.
+src/hooks/use-keyboard-shortcuts.ts, code is 127, comment is 4, blank is 13.
+src/hooks/use-panels.ts, code is 25, comment is 0, blank is 3.
+src/hooks/use-theme.ts, code is 73, comment is 12, blank is 14.
+src/lib/history.ts, code is 98, comment is 26, blank is 21.
+src/lib/preferences-db.ts, code is 87, comment is 8, blank is 14.
+src/lib/utils.ts, code is 5, comment is 0, blank is 1.
+src/main/index.ts, code is 27, comment is 1, blank is 5.
+src/main/main.ts, code is 422, comment is 40, blank is 52.
+src/main/menu.ts, code is 312, comment is 1, blank is 15.
+src/main/preload.ts, code is 45, comment is 2, blank is 5.
+src/preload/index.ts, code is 64, comment is 0, blank is 6.
+src/preload/webview-preload.ts, code is 66, comment is 8, blank is 9.
+src/renderer/app.tsx, code is 420, comment is 10, blank is 42.
+src/renderer/components/ai-tab-trigger.tsx, code is 23, comment is 0, blank is 2.
+src/renderer/components/ai-tab.tsx, code is 17, comment is 0, blank is 1.
+src/renderer/components/browser-content.tsx, code is 46, comment is 2, blank is 4.
+src/renderer/components/browser-webview.tsx, code is 415, comment is 33, blank is 60.
+src/renderer/components/error-favicon.tsx, code is 11, comment is 0, blank is 1.
+src/renderer/components/error-page.tsx, code is 53, comment is 0, blank is 3.
+src/renderer/components/horizontal-tabs.tsx, code is 86, comment is 2, blank is 4.
+src/renderer/components/navigation-controls.tsx, code is 112, comment is 0, blank is 8.
+src/renderer/components/settings-menu.tsx, code is 40, comment is 1, blank is 3.
+src/renderer/components/side-panel.tsx, code is 68, comment is 1, blank is 11.
+src/renderer/components/streams-tab-trigger.tsx, code is 41, comment is 0, blank is 3.
+src/renderer/components/streams-tab.tsx, code is 174, comment is 7, blank is 17.
+src/renderer/components/theme-toggle.tsx, code is 31, comment is 0, blank is 4.
+src/renderer/components/title-bar.tsx, code is 95, comment is 0, blank is 3.
+src/renderer/components/url-bar.tsx, code is 431, comment is 67, blank is 57.
+src/renderer/components/url-suggestions.tsx, code is 93, comment is 2, blank is 6.
+src/renderer/index.tsx, code is 10, comment is 2, blank is 2.
+src/renderer/pages/settings.tsx, code is 102, comment is 0, blank is 6.
+src/renderer/preload.d.ts, code is 6, comment is 1, blank is 1.
+src/styles/index.css, code is 104, comment is 1, blank is 5.
+src/styles/output.css, code is 716, comment is 165, blank is 166.
+src/types/electron.d.ts, code is 34, comment is 0, blank is 1.
+src/types/tab.ts, code is 14, comment is 0, blank is 0.
+tailwind.config.js, code is 80, comment is 1, blank is 1.
+tsconfig.json, code is 29, comment is 0, blank is 1.
+vite.config.ts, code is 19, comment is 7, blank is 1.
+===============================================================================

@@ -12,6 +12,7 @@ import {
 import { ErrorFavicon } from "./error-favicon";
 import { URLSuggestions, type Suggestion } from "./url-suggestions";
 import { APP_NAME } from "@/constants/app";
+import { usePreferences } from "@/contexts/preferences-context";
 
 const settingsSuggestion: Suggestion = {
 	url: `${APP_NAME.toLowerCase()}://settings`,
@@ -95,16 +96,30 @@ export function URLBar({
 	const [hoveredUrl, setHoveredUrl] = useState<string | null>(null);
 	const [isHovering, setIsHovering] = useState(false);
 	const [hasMouseMoved, setHasMouseMoved] = useState(false);
-
+	const { tabLayout } = usePreferences();
 	const inputRef = externalRef || internalRef;
 
 	// Define updateSuggestions outside useEffect so it's accessible everywhere
 	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
 	const updateSuggestions = useCallback(async () => {
+		console.log(
+			"[URLBar] updateSuggestions called. isEditing:",
+			isEditing,
+			"inputValue:",
+			`"${inputValue}"`,
+			"url:",
+			`"${url}"`,
+		);
 		if (!isEditing || !inputValue.trim()) {
+			console.log(
+				"[URLBar] updateSuggestions: clearing suggestions due to !isEditing or empty inputValue.",
+			);
 			setSuggestions([]);
 			return;
 		}
+		console.log(
+			"[URLBar] updateSuggestions: proceeding to fetch/filter suggestions.",
+		);
 
 		const results = await historyService.searchHistory(inputValue);
 		const defaultSearch = {
@@ -214,12 +229,13 @@ export function URLBar({
 	// Handle focus and select when shouldFocusAndSelect changes
 	useEffect(() => {
 		if (shouldFocusAndSelect) {
+			// For a new tab or programmatic focus, ensure input is empty.
+			setInputValue("");
+			onChange("");
+			// Suggestions and selected index are handled by the other effect now.
 			inputRef.current?.focus();
-			setTimeout(() => {
-				inputRef.current?.select();
-			}, 0);
 		}
-	}, [shouldFocusAndSelect, inputRef]);
+	}, [shouldFocusAndSelect, inputRef, onChange]);
 
 	// Update input value when URL changes and we're not editing
 	useEffect(() => {
@@ -310,8 +326,17 @@ export function URLBar({
 
 	// Update suggestions when input changes - NOW CALLS the shared function
 	useEffect(() => {
+		// If we are editing a new tab (url is empty or about:blank),
+		// ensure suggestions are cleared and do not proceed to fetch.
+		if (isEditing && (url === "" || url === "about:blank")) {
+			console.log(
+				"[URLBar] useEffect[updateSuggestions]: New tab detected, clearing suggestions directly.",
+			);
+			setSuggestions([]);
+			return;
+		}
 		updateSuggestions();
-	}, [updateSuggestions]); // Depends on the useCallback dependencies
+	}, [isEditing, url, updateSuggestions]); // Added url here to react to its change for new tabs
 
 	useEffect(() => {
 		// Reset mouse movement flag when suggestions change
@@ -337,6 +362,9 @@ export function URLBar({
 		// Reset hover states when typing
 		setHoveredUrl(null);
 		setHasMouseMoved(false);
+
+		// updateSuggestions (via its useEffect) will handle clearing suggestions
+		// if newValue becomes empty and isEditing is true.
 	};
 
 	const handleMouseDown = async () => {
@@ -355,7 +383,6 @@ export function URLBar({
 			}, 0);
 		}
 		wasClickedRef.current = false;
-		await updateSuggestions();
 	};
 
 	const handleBlur = () => {
@@ -471,10 +498,13 @@ export function URLBar({
 	};
 
 	const getIcon = () => {
-		if (inputValue !== "about:blank" && (isLoading || isFaviconLoading)) {
+		if (isLoading || isFaviconLoading) {
 			return (
 				<Loader2 className={cn("w-4 h-4 text-muted-foreground animate-spin")} />
 			);
+		}
+		if (inputValue.length === 0) {
+			return <Search className={cn("w-4 h-4 text-muted-foreground")} />;
 		}
 
 		if (currentView === "settings") {

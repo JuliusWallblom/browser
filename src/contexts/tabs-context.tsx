@@ -18,16 +18,18 @@ export function TabsProvider({ children }: { children: ReactNode }) {
 	const [tabs, setTabs] = useState<Tab[]>([]);
 	const [activeTabId, setActiveTabId] = useState<string | null>(null);
 
-	const addTab = useCallback((tab: Partial<Tab>) => {
+	const addTab = useCallback((tabPartial: Partial<Tab>) => {
 		const newTab: Tab = {
 			id: crypto.randomUUID(),
-			url: tab.url || DEFAULT_URL,
-			title: tab.title || "New Tab",
-			isLoading: false,
+			url: tabPartial.url || DEFAULT_URL,
+			title: tabPartial.title || "New Tab",
+			isLoading: !!tabPartial.url && tabPartial.url !== "about:blank",
 			webviewKey: Date.now(),
 			canGoBack: false,
 			canGoForward: false,
-			...tab,
+			view: "webview",
+			...tabPartial,
+			isDomReady: false,
 		};
 
 		setTabs((prevTabs) => [...prevTabs, newTab]);

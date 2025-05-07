@@ -11,10 +11,13 @@ import React, {
 export type TabLayout = "vertical" | "horizontal";
 
 const PREFERENCE_KEY_TAB_LAYOUT = "tabLayout";
+const PREFERENCE_KEY_PREVIEW_TABS = "previewTabs";
 
 interface PreferencesContextType {
 	tabLayout: TabLayout;
 	setTabLayout: (layout: TabLayout) => void;
+	previewTabs: boolean;
+	setPreviewTabs: (enabled: boolean) => void;
 	isLoadingPreferences: boolean;
 }
 
@@ -28,6 +31,7 @@ interface PreferencesProviderProps {
 
 export function PreferencesProvider({ children }: PreferencesProviderProps) {
 	const [tabLayout, setTabLayoutInternal] = useState<TabLayout>("vertical");
+	const [previewTabs, setPreviewTabsInternal] = useState<boolean>(true);
 	const [isLoadingPreferences, setIsLoadingPreferences] = useState(true);
 
 	useEffect(() => {
@@ -38,12 +42,17 @@ export function PreferencesProvider({ children }: PreferencesProviderProps) {
 					PREFERENCE_KEY_TAB_LAYOUT,
 					"vertical",
 				);
+				const storedPreviewTabs = await getPreference<boolean>(
+					PREFERENCE_KEY_PREVIEW_TABS,
+					true,
+				);
 				if (isMounted) {
 					setTabLayoutInternal(storedLayout);
+					setPreviewTabsInternal(storedPreviewTabs);
 				}
 			} catch (error) {
-				console.error("Failed to load tab layout preference:", error);
-				// Keep default 'vertical' if loading fails
+				console.error("Failed to load preferences:", error);
+				// Keep default values if loading fails
 			} finally {
 				if (isMounted) {
 					setIsLoadingPreferences(false);
@@ -67,9 +76,25 @@ export function PreferencesProvider({ children }: PreferencesProviderProps) {
 		}
 	}, []);
 
+	const setPreviewTabs = useCallback(async (enabled: boolean) => {
+		setPreviewTabsInternal(enabled);
+		try {
+			await setPreference<boolean>(PREFERENCE_KEY_PREVIEW_TABS, enabled);
+		} catch (error) {
+			console.error("Failed to save preview tabs preference:", error);
+			// Potentially revert UI or notify user
+		}
+	}, []);
+
 	return (
 		<PreferencesContext.Provider
-			value={{ tabLayout, setTabLayout, isLoadingPreferences }}
+			value={{
+				tabLayout,
+				setTabLayout,
+				previewTabs,
+				setPreviewTabs,
+				isLoadingPreferences,
+			}}
 		>
 			{children}
 		</PreferencesContext.Provider>

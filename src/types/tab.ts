@@ -11,4 +11,6 @@ export interface Tab {
 	isError?: boolean;
 	previousUrl?: string;
 	view: "webview" | "settings";
+	loadStartTime?: number;
+	isDomReady?: boolean;
 }

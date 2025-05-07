@@ -27,7 +27,7 @@ export default function SettingsMenu({ onNavigateTo }: SettingsMenuProps) {
 					variant="ghost"
 					size="icon"
 					type="button"
-					className={cn("h-auto w-auto p-1 rounded-full non-draggable")}
+					className={cn("h-auto w-auto p-1 non-draggable")}
 					aria-label={"Settings"}
 				>
 					<MoreVertical size="16" />

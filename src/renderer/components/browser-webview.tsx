@@ -236,6 +236,7 @@ export function WebView({
 				// Treat about:blank as instantly loaded.
 				initialLoadDoneRef.current = true; // Set true since this navigation is done.
 				isRefreshingRef.current = false;
+				isReadyRef.current = true; // Mark as ready
 
 				updateTab(tab.id, {
 					url: "about:blank",
@@ -394,6 +395,23 @@ export function WebView({
 		updateNavigationState,
 		updateFavicon,
 	]);
+
+	// Effect to proactively update favicon if it's missing on an active, loaded tab
+	useEffect(() => {
+		const webview = webviewRef.current;
+		if (
+			isActive &&
+			webview &&
+			tab.view === "webview" &&
+			tab.url &&
+			tab.url !== "about:blank" &&
+			!tab.isLoading &&
+			tab.favicon === undefined
+		) {
+			console.log("[WebView] Proactive favicon fetch for:", tab.url);
+			updateFavicon();
+		}
+	}, [isActive, tab.view, tab.url, tab.isLoading, tab.favicon, updateFavicon]);
 
 	useEffect(() => {
 		const webview = webviewRef.current;

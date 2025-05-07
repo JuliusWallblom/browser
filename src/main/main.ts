@@ -155,6 +155,10 @@ const createWindow = async () => {
 
 	windows.add(newWindow);
 
+	newWindow.on("closed", () => {
+		windows.delete(newWindow);
+	});
+
 	if (process.env.VITE_DEV_SERVER_URL) {
 		newWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
 		// Prevent title changes in development
@@ -176,16 +180,16 @@ const createWindow = async () => {
 
 	// Listen for the renderer to signal it's ready
 	ipcMain.on("renderer-ready-to-show", (event, windowId) => {
-		const targetWindow = windows.values().next().value; // Assuming one main window for now
+		const readyWindow = BrowserWindow.fromWebContents(event.sender);
 		// A more robust way would be to match windowId if you pass it from renderer
-		if (targetWindow) {
+		if (readyWindow) {
 			if (process.env.START_MINIMIZED) {
-				targetWindow.minimize();
+				readyWindow.minimize();
 			} else {
-				targetWindow.show();
+				readyWindow.show();
 			}
 			// Set title after window is shown
-			targetWindow.setTitle(APP_NAME);
+			readyWindow.setTitle(APP_NAME);
 		}
 	});
 

@@ -76,7 +76,7 @@ export function NavigationControls({
 				onContextMenu={handleContextMenu("back")}
 				disabled={!canGoBack}
 				className={cn(
-					"h-auto w-auto p-1 rounded-full non-draggable",
+					"h-auto w-auto p-1 non-draggable",
 					canGoBack ? "hover:bg-muted" : "opacity-50 cursor-not-allowed",
 				)}
 				aria-label="Go back"
@@ -95,7 +95,7 @@ export function NavigationControls({
 				onContextMenu={handleContextMenu("forward")}
 				disabled={!(canGoForward || canGoForwardToSettings)}
 				className={cn(
-					"h-auto w-auto p-1 rounded-full non-draggable",
+					"h-auto w-auto p-1 non-draggable",
 					canGoForward || canGoForwardToSettings
 						? "hover:bg-muted"
 						: "opacity-50 cursor-not-allowed",
@@ -107,10 +107,10 @@ export function NavigationControls({
 			<Button
 				variant="ghost"
 				type="button"
-				disabled={isBlankPage || currentView === "settings"}
+				disabled={currentView === "settings"}
 				onClick={() => onNavigate(isLoading ? "stop" : "refresh")}
 				onContextMenu={handleContextMenu("refresh")}
-				className={cn("h-auto w-auto p-1 rounded-full non-draggable")}
+				className={cn("h-auto w-auto p-1 non-draggable")}
 				aria-label={isLoading ? "Stop loading" : "Refresh page"}
 			>
 				{isLoading ? <X size="16" /> : <RotateCcw size="16" />}

@@ -128,7 +128,7 @@ export default function StreamsTab() {
 				<div
 					ref={contentRef}
 					className={cn(
-						"space-y-1 w-full pb-[6px] px-1 min-w-0",
+						"space-y-1 w-full pb-[6px] pt-[6px] px-1 min-w-0",
 						hasScrollbar ? "pr-3" : "",
 					)}
 				>
