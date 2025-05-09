@@ -24,8 +24,10 @@ export default function ToolbarContent() {
 		React.useState("newTabPage"); // 'always', 'newTabPage'
 
 	return (
-		<>
-			<h2 className="text-md font-semibold mb-4 -mt-1 pt-8">Toolbar</h2>
+		<div className="w-full">
+			<h1 className="text-xs font-medium tracking-widest uppercase text-muted-foreground mb-4 -mt-1">
+				Toolbar
+			</h1>
 			<section className="space-y-0">
 				<Card className="overflow-hidden">
 					<CardContent className="p-0 border-none">
@@ -137,6 +139,6 @@ export default function ToolbarContent() {
 					</CardContent>
 				</Card>
 			</section>
-		</>
+		</div>
 	);
 }

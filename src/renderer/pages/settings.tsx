@@ -62,6 +62,7 @@ import verticalTabsLight from "../../../assets/images/vertical_tabs_light.png";
 import ThemeContent from "./components/theme-content";
 import ToolbarContent from "./components/toolbar-content";
 import TabsContent from "./components/tabs-content";
+import AppearanceTab from "./components/appearance-tab";
 
 const sidebarNavigation = [
 	{
@@ -270,13 +271,7 @@ export function SettingsPage() {
 							mainContentHasScrollbar ? "pr-2" : "pr-0", // Or pr-0 if no base padding desired
 						)}
 					>
-						{activeSection === "appearance" && (
-							<>
-								<ThemeContent />
-								<TabsContent />
-								<ToolbarContent />
-							</>
-						)}
+						{activeSection === "appearance" && <AppearanceTab />}
 						{activeSection !== "appearance" && (
 							<div className="flex flex-col items-center justify-center h-full">
 								<div className="text-center">

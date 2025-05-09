@@ -23,7 +23,9 @@ export default function TabsContent() {
 
 	return (
 		<div className="w-full">
-			<h1 className="text-md font-medium mb-4 -mt-1">Tabs</h1>
+			<h1 className="text-xs font-medium tracking-widest uppercase text-muted-foreground mb-4 -mt-1">
+				Tabs
+			</h1>
 			<section className="space-y-0">
 				<Card className="overflow-hidden">
 					<CardContent className="p-0 border-none">
@@ -40,7 +42,7 @@ export default function TabsContent() {
 								<RadioGroup
 									value={tabLayout}
 									onValueChange={(value) => setTabLayout(value as TabLayout)}
-									className="py-2 flex flex-row gap-4"
+									className="mt-4 mb-2 flex flex-row gap-4"
 								>
 									<TabLayoutOption
 										value="vertical"
