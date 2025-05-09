@@ -71,7 +71,7 @@ export function SidePanel({
 				<div
 					className={cn(
 						"absolute inset-y-0 left-0 w-px",
-						"bg-transparent group-hover:bg-primary/50 group-active:bg-primary",
+						"bg-border group-hover:bg-primary/50 group-active:bg-primary",
 					)}
 				/>
 			</div>

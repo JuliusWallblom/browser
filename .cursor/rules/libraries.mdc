@@ -1,0 +1,15 @@
+---
+description: Library conventions
+globs: 
+---
+# Library rules
+
+## This project uses
+
+* Tailwind
+* Tanstack React Query
+* Lucide icons
+* Lodash
+* Shadcn
+
+If you don't explicitly need something from a library, use native functions. Make sure you use these libraries by default when prompted. Only import what you need from each library

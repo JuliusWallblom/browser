@@ -29,8 +29,8 @@ export function AITabTrigger() {
 				<title>Gradient Definitions</title>
 				<defs>
 					<linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
-						<stop offset="0%" stopColor="#007eff" /> {/* Deep Purple */}
-						<stop offset="100%" stopColor="#00d2ff" /> {/* Vibrant Blue */}
+						<stop offset="0%" stopColor="#ff00c0" /> {/* Deep Purple */}
+						<stop offset="100%" stopColor="#ff5400" /> {/* Vibrant Blue */}
 					</linearGradient>
 				</defs>
 			</svg>
@@ -48,7 +48,7 @@ export function AITabTrigger() {
 					isRightPanelOpen ? "Close AI assistant" : "Open AI assistant"
 				}
 			>
-				<BotMessageSquare
+				<MousePointer2
 					className="!w-4 !h-4"
 					color={`url(#${gradientId})`}
 					fill={`url(#${gradientId})`}

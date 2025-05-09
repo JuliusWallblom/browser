@@ -1,0 +1,14 @@
+---
+description: Typescript conventions
+globs: 
+alwaysApply: false
+---
+# TypeScript rules
+
+Only write TypeScript, no JavaScript. Make sure that all linting errors are fixed and that we follow TypeScript best practices. That includes but isn't limited to:
+
+- We type everything
+- We NEVER use "any"
+- Reuse types, don't unneccesarily create new types
+- If one type has a data object that is part of another type, such as "stationName" being the object "name" of type "Station", make sure you use it accordingly, e.g. "stationName: Station["name"]"
+- Never cast types like "as Type"

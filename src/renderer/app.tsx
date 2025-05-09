@@ -575,15 +575,15 @@ function Browser() {
 export default function App() {
 	return (
 		<Router>
-			<TabsProvider>
+			<PreferencesProvider>
 				<WebviewProvider>
-					<PreferencesProvider>
+					<TabsProvider>
 						<Routes>
 							<Route path="/" element={<Browser />} />
 						</Routes>
-					</PreferencesProvider>
+					</TabsProvider>
 				</WebviewProvider>
-			</TabsProvider>
+			</PreferencesProvider>
 		</Router>
 	);
 }

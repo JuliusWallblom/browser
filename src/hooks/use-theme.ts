@@ -90,6 +90,9 @@ export function useTheme() {
 		});
 	}, []);
 
+	// Determine the effective theme to be applied
+	const effectiveTheme = theme === "system" ? systemTheme : theme;
+
 	// Return isLoadingTheme if consuming components need to know
-	return { theme, setTheme, cycleTheme, isLoadingTheme };
+	return { theme, setTheme, cycleTheme, isLoadingTheme, effectiveTheme };
 }

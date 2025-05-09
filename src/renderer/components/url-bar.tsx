@@ -546,7 +546,7 @@ export function URLBar({
 					onBlur={handleBlur}
 					onMouseDown={handleMouseDown}
 					onKeyDown={handleKeyDown}
-					className="min-w-[165px] relative w-full h-full pl-7 pr-2 rounded-lg text-sm bg-muted border-none z-50"
+					className="min-w-[165px] relative w-full h-full pl-7 pr-2 rounded text-sm bg-muted border-none z-50"
 					placeholder="Search or enter URL"
 				/>
 				<URLSuggestions

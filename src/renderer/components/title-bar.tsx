@@ -91,7 +91,7 @@ export function TitleBar({
 					</Button>
 				)}
 			</div>
-			<SettingsMenu onNavigateTo={onNavigateTo} />
+			<SettingsMenu />
 			<AITabTrigger />
 		</div>
 	);

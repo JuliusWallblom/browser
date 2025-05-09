@@ -2,87 +2,73 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { usePanels } from "@/hooks/use-panels";
 import { cn } from "@/lib/utils";
-import { Globe, Loader2, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useTabs } from "../../contexts/tabs-context";
 import type { Tab } from "../../types/tab";
 import { SidePanel } from "./side-panel";
-import { ErrorFavicon } from "./error-favicon";
+import { HorizontalTab } from "./horizontal-tab";
+import { usePreferences } from "@/contexts/preferences-context";
 
 export default function StreamsTab() {
 	const { isLeftPanelOpen, setLeftPanelOpen } = usePanels();
-	const { tabs, activeTabId, removeTab, setActiveTab } = useTabs();
+	const {
+		tabs,
+		activeTabId,
+		removeTab,
+		setActiveTab,
+		previewImages,
+		captureAndStoreTabPreview,
+	} = useTabs();
+	const { previewTabs, tabLayout } = usePreferences();
+
 	const [hasScrollbar, setHasScrollbar] = useState(false);
 	const scrollAreaRef = useRef<HTMLDivElement>(null);
 	const contentRef = useRef<HTMLDivElement>(null);
 
-	const handleKeyDown = (e: React.KeyboardEvent, tab: Tab) => {
-		if (e.key === "Enter" || e.key === " ") {
-			e.preventDefault();
-			setActiveTab(tab.id);
-		}
-	};
+	const checkScrollbar = useCallback(() => {
+		const content = contentRef.current;
+		const viewport = scrollAreaRef.current?.querySelector(
+			"[data-radix-scroll-area-viewport]",
+		) as HTMLElement;
 
-	const getTabTitle = (tab: Tab) => {
-		if (tab.url === "") {
-			return "New Tab";
+		console.log("[StreamsTab] Checking scrollbar:", {
+			contentExists: !!content,
+			viewportExists: !!viewport,
+		});
+
+		if (!content || !viewport) {
+			console.log("[StreamsTab] Missing refs, skipping check");
+			return;
 		}
-		return tab.title || tab.url || "New Tab";
-	};
+
+		const contentHasOverflow = content.scrollHeight > content.clientHeight;
+		const viewportHasOverflow = viewport.scrollHeight > viewport.clientHeight;
+
+		console.log("[StreamsTab] Overflow status:", {
+			contentHasOverflow,
+			viewportHasOverflow,
+			currentHasScrollbar: hasScrollbar,
+		});
+
+		const needsScrollbar = contentHasOverflow || viewportHasOverflow;
+		if (needsScrollbar !== hasScrollbar) {
+			console.log("[StreamsTab] Updating scrollbar state:", {
+				needsScrollbar,
+			});
+			setHasScrollbar(needsScrollbar);
+		}
+	}, [hasScrollbar]);
 
 	useEffect(() => {
-		const checkScrollbar = () => {
-			const content = contentRef.current;
-			const viewport = scrollAreaRef.current?.querySelector(
-				"[data-radix-scroll-area-viewport]",
-			) as HTMLElement;
-
-			console.log("[StreamsTab] Checking scrollbar:", {
-				contentExists: !!content,
-				viewportExists: !!viewport,
-				contentHeight: content?.scrollHeight,
-				contentClientHeight: content?.clientHeight,
-				viewportHeight: viewport?.scrollHeight,
-				viewportClientHeight: viewport?.clientHeight,
-				numTabs: tabs.length,
-			});
-
-			if (!content || !viewport) {
-				console.log("[StreamsTab] Missing refs, skipping check");
-				return;
-			}
-
-			// Check both content and viewport
-			const contentHasOverflow = content.scrollHeight > content.clientHeight;
-			const viewportHasOverflow = viewport.scrollHeight > viewport.clientHeight;
-
-			console.log("[StreamsTab] Overflow status:", {
-				contentHasOverflow,
-				viewportHasOverflow,
-				currentHasScrollbar: hasScrollbar,
-			});
-
-			// Update if either has overflow
-			const needsScrollbar = contentHasOverflow || viewportHasOverflow;
-			if (needsScrollbar !== hasScrollbar) {
-				console.log("[StreamsTab] Updating scrollbar state:", {
-					needsScrollbar,
-				});
-				setHasScrollbar(needsScrollbar);
-			}
-		};
-
-		// Initial check
-		console.log("[StreamsTab] Running initial check");
+		console.log("[StreamsTab] Running initial check (main useEffect)");
 		checkScrollbar();
 
-		// Check after a short delay to allow layout to settle
 		const timeoutId = setTimeout(() => {
-			console.log("[StreamsTab] Running delayed check");
+			console.log("[StreamsTab] Running delayed check (main useEffect)");
 			checkScrollbar();
 		}, 100);
 
-		// Create a ResizeObserver to watch for size changes
+		const currentContentRef = contentRef.current;
 		const resizeObserver = new ResizeObserver((entries) => {
 			console.log("[StreamsTab] ResizeObserver triggered:", {
 				numEntries: entries.length,
@@ -90,11 +76,10 @@ export default function StreamsTab() {
 			checkScrollbar();
 		});
 
-		if (contentRef.current) {
-			resizeObserver.observe(contentRef.current);
+		if (currentContentRef) {
+			resizeObserver.observe(currentContentRef);
 		}
 
-		// Create a MutationObserver to watch for content changes
 		const mutationObserver = new MutationObserver((mutations) => {
 			console.log("[StreamsTab] MutationObserver triggered:", {
 				numMutations: mutations.length,
@@ -103,20 +88,32 @@ export default function StreamsTab() {
 			checkScrollbar();
 		});
 
-		if (contentRef.current) {
-			mutationObserver.observe(contentRef.current, {
+		if (currentContentRef) {
+			mutationObserver.observe(currentContentRef, {
 				childList: true,
 				subtree: true,
 				characterData: true,
 			});
 		}
 
+		window.addEventListener("resize", checkScrollbar);
+
 		return () => {
 			clearTimeout(timeoutId);
-			resizeObserver.disconnect();
-			mutationObserver.disconnect();
+			if (currentContentRef) {
+				resizeObserver.unobserve(currentContentRef);
+				mutationObserver.disconnect();
+			}
+			window.removeEventListener("resize", checkScrollbar);
 		};
-	}, [hasScrollbar, tabs.length]);
+	}, [checkScrollbar]);
+
+	useEffect(() => {
+		console.log("[StreamsTab] tabLayout changed, running checkScrollbar.", {
+			tabLayout,
+		});
+		checkScrollbar();
+	}, [tabLayout, checkScrollbar]);
 
 	return (
 		<SidePanel
@@ -129,67 +126,29 @@ export default function StreamsTab() {
 					ref={contentRef}
 					className={cn(
 						"space-y-1 w-full pb-[6px] pt-[6px] px-1 min-w-0",
-						hasScrollbar ? "pr-3" : "",
+						hasScrollbar ? "pr-3" : "pr-[5px]",
 					)}
 				>
 					{tabs.map((tab: Tab) => (
-						<div
+						<HorizontalTab
 							key={tab.id}
-							// biome-ignore lint/a11y/useSemanticElements: <explanation>
-							role="button"
-							tabIndex={0}
-							className={cn(
-								"!h-8 rounded group flex items-center gap-2 px-2 cursor-pointer hover:bg-muted text-left w-full min-w-0",
-								activeTabId === tab.id && "bg-muted",
-							)}
-							onClick={() => setActiveTab(tab.id)}
-							onKeyDown={(e) => handleKeyDown(e, tab)}
-						>
-							<div className="shrink-0 w-4 h-4">
-								{tab.url !== "about:blank" && tab.isLoading ? (
-									<Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-								) : tab.isError ? (
-									<ErrorFavicon />
-								) : tab.favicon ? (
-									<img
-										src={tab.favicon}
-										alt=""
-										className="w-4 h-4"
-										onError={(e) => {
-											e.currentTarget.src = "";
-											e.currentTarget.style.display = "none";
-										}}
-									/>
-								) : (
-									<Globe className="w-4 h-4 text-muted-foreground" />
-								)}
-							</div>
-							<div className="truncate w-[1px] flex-1">
-								<div className="truncate text-sm leading-none">
-									{getTabTitle(tab)}
-								</div>
-							</div>
-							<div className="shrink-0">
-								<Button
-									variant="ghost"
-									size="icon"
-									className={cn(
-										"h-8 w-4 bg-transparent opacity-0 group-hover:opacity-100",
-									)}
-									onClick={(e) => {
-										e.stopPropagation();
-										if (tabs.length === 1) {
-											window.electron.ipcRenderer.sendMessage("close-window");
-										} else {
-											removeTab(tab.id);
-										}
-									}}
-									aria-label={`Close tab ${getTabTitle(tab)}`}
-								>
-									<X className="h-3 w-3" />
-								</Button>
-							</div>
-						</div>
+							tab={tab}
+							isActive={activeTabId === tab.id}
+							onSelect={setActiveTab}
+							onClose={(tabIdToClose) => {
+								if (tabs.length === 1) {
+									window.electron.ipcRenderer.sendMessage("close-window");
+								} else {
+									removeTab(tabIdToClose);
+								}
+							}}
+							previewEnabled={previewTabs}
+							closeButtonVisibility="onHoverOrActive"
+							onHover={captureAndStoreTabPreview}
+							previewImage={previewImages[tab.id]}
+							previewCardSide="right"
+							variant="streamItem"
+						/>
 					))}
 				</div>
 			</ScrollArea>

@@ -1,0 +1,31 @@
+---
+description: File name conventions
+globs: 
+---
+# File rules
+
+## When to use kebab-case
+
+- Components
+- Screens
+- Pages
+- Constants
+- Hooks
+
+## When to use camelCase
+
+- Utils
+
+## Code splitting
+
+You are expected to separate components, constants, hooks and utils from one another
+
+## When to create barrel files
+
+- Barrel files should never be created for "util" (utility) or "hook" directories
+- If there is only one file in the directory, that file itself should be called index.ts or index.tsx. If there are more than one file, a barrel file should be used
+
+## How to name components
+
+- We should NEVER include the word "component" in component names
+- If a component resides within a module, the name of the component should start with "module name"-. An example of this is "settings-cell.tsx" inside of the settings module's components directory

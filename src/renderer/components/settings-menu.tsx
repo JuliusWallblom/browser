@@ -9,15 +9,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { APP_NAME } from "@/constants/app";
 import { cn } from "@/lib/utils";
-import { MoreVertical, Settings } from "lucide-react";
+import { MoreVertical } from "lucide-react";
+import { useTabs } from "@/contexts/tabs-context";
 
-interface SettingsMenuProps {
-	onNavigateTo: (url: string) => void;
-}
+export default function SettingsMenu() {
+	const { addTab } = useTabs();
 
-export default function SettingsMenu({ onNavigateTo }: SettingsMenuProps) {
 	const handleSettingsClick = () => {
-		onNavigateTo(`${APP_NAME.toLowerCase()}://settings`);
+		addTab({
+			url: `${APP_NAME.toLowerCase()}://settings`,
+			title: "Settings",
+			view: "settings",
+			isLoading: false,
+		});
 	};
 
 	return (

@@ -1,0 +1,22 @@
+---
+description: React conventions
+globs: 
+---
+# React rules
+
+## Component types
+
+- UI components: highly reusable components (like "button" or "text"), these should go in "src/components/ui"
+- Core components: reusable components, independent of module/feature (like "header" or "table")
+- Module components: components that are specifically made for a feature (module)
+
+## Important rules when working with components
+
+- Always use absolute imports if possible
+- Never use React.FC or "FC"
+- Never use React.useState, make sure useState is imported directly
+- Always create functional components
+- Always make sure you split up the components into multiple components
+- If something can be optimized by using memo or callback, use it
+- Avoid using useEffect unless absolutely necessary
+- Unless it's returning a specific value, always write functions instead of arrow functions

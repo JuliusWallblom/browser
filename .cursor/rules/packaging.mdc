@@ -1,0 +1,33 @@
+---
+description: Packaging conventions
+globs: 
+alwaysApply: false
+---
+# Packaging rules
+
+## Horizontal, modular packaging
+
+- Generic constants, utils, hooks, components reside right in "src". This is code that can and would be used by any module. An example of this is utilities related to localization, error handling or testing
+- If there is an app entry file, it should always be called "index.tsx" and reside directly under "src"
+
+For anything that isn't generic, we want to use a module package in "src/app". A module is a high level abstract feature, such as "auth" or "blog". Inside each module, when we need them, we should create the same type of packaging structure that we have in the root ("src"). Directories should ONLY be created in modules if we have code to put inside it. "comments" doesn't count. Together, this would mean that a typical project could look like this:
+
+src
+src/constants
+src/hooks
+src/components
+src/utils
+...
+src/app/auth
+src/app/auth/constants/index.tsx
+src/app/auth/components/index.tsx
+src/app/auth/index.tsx
+
+
+If a module has submodules (like multiple screens or pages within the same module), the packaging should look like this:
+
+src/app/home/(modules)/search/index.tsx
+
+If a module only has one screen or page, the packaging should look like this
+
+src/app/home/index.tsx
