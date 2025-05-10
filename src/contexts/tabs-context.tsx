@@ -1,17 +1,26 @@
 import { DEFAULT_URL } from "@/constants/app";
 import type { Tab } from "@/types/tab";
 import type { ReactNode } from "react";
-import { createContext, useCallback, useContext, useState } from "react";
+import {
+	createContext,
+	useCallback,
+	useContext,
+	useState,
+	useEffect,
+} from "react";
 import { useWebviews } from "./webview-context";
 import { usePreferences } from "./preferences-context";
+import { arrayMove } from "@dnd-kit/sortable";
 
 interface TabsContextType {
 	tabs: Tab[];
+	orderedTabIds: string[];
 	activeTabId: string | null;
 	addTab: (tab: Partial<Tab>) => string;
 	removeTab: (id: string) => void;
 	updateTab: (id: string, updates: Partial<Tab>) => void;
 	setActiveTab: (id: string) => void;
+	reorderTabs: (activeId: string, overId: string) => void;
 	previewImages: Record<string, string | null>;
 	loadingPreviews: Record<string, boolean>;
 	capturedUrlsForTabs: Record<string, string>;
@@ -22,6 +31,7 @@ const TabsContext = createContext<TabsContextType | null>(null);
 
 export function TabsProvider({ children }: { children: ReactNode }) {
 	const [tabs, setTabs] = useState<Tab[]>([]);
+	const [orderedTabIds, setOrderedTabIds] = useState<string[]>([]);
 	const [activeTabId, setActiveTabId] = useState<string | null>(null);
 
 	const [previewImages, setPreviewImages] = useState<
@@ -36,6 +46,10 @@ export function TabsProvider({ children }: { children: ReactNode }) {
 
 	const { webviewRefs } = useWebviews();
 	const { previewTabs } = usePreferences();
+
+	useEffect(() => {
+		setOrderedTabIds(tabs.map((t) => t.id));
+	}, [tabs]);
 
 	const addTab = useCallback((tabPartial: Partial<Tab>) => {
 		const newTab: Tab = {
@@ -56,19 +70,50 @@ export function TabsProvider({ children }: { children: ReactNode }) {
 		return newTab.id;
 	}, []);
 
+	const reorderTabs = useCallback((activeId: string, overId: string) => {
+		setOrderedTabIds((prevIds) => {
+			const activeIndex = prevIds.findIndex((id) => id === activeId);
+			const overIndex = prevIds.findIndex((id) => id === overId);
+			if (activeIndex !== -1 && overIndex !== -1 && activeIndex !== overIndex) {
+				return arrayMove(prevIds, activeIndex, overIndex);
+			}
+			return prevIds;
+		});
+	}, []);
+
 	const removeTab = useCallback(
-		(id: string) => {
+		(idToRemove: string) => {
 			setTabs((prev) => {
-				const newTabs = prev.filter((tab) => tab.id !== id);
-				if (id === activeTabId) {
-					const index = prev.findIndex((tab) => tab.id === id);
-					const nextTab = newTabs[index] || newTabs[index - 1] || newTabs[0];
-					setActiveTabId(nextTab?.id || null);
+				const newTabs = prev.filter((tab) => tab.id !== idToRemove);
+				if (idToRemove === activeTabId) {
+					const index = prev.findIndex((tab) => tab.id === idToRemove);
+					const currentOrderedIndex = orderedTabIds.findIndex(
+						(id) => id === idToRemove,
+					);
+					const newOrderedIds = orderedTabIds.filter((id) => id !== idToRemove);
+
+					let nextActiveId: string | null = null;
+					if (newOrderedIds.length > 0) {
+						if (
+							currentOrderedIndex >= 0 &&
+							currentOrderedIndex < newOrderedIds.length
+						) {
+							nextActiveId = newOrderedIds[currentOrderedIndex];
+						} else if (currentOrderedIndex > 0 && newOrderedIds.length > 0) {
+							nextActiveId =
+								newOrderedIds[
+									Math.min(currentOrderedIndex - 1, newOrderedIds.length - 1)
+								];
+						} else if (newOrderedIds.length > 0) {
+							nextActiveId = newOrderedIds[0];
+						}
+					}
+					setActiveTabId(nextActiveId);
 				}
 				return newTabs;
 			});
 		},
-		[activeTabId],
+		[activeTabId, orderedTabIds],
 	);
 
 	const updateTab = useCallback((id: string, updates: Partial<Tab>) => {
@@ -127,11 +172,13 @@ export function TabsProvider({ children }: { children: ReactNode }) {
 		<TabsContext.Provider
 			value={{
 				tabs,
+				orderedTabIds,
 				activeTabId,
 				addTab,
 				removeTab,
 				updateTab,
 				setActiveTab,
+				reorderTabs,
 				previewImages,
 				loadingPreviews,
 				capturedUrlsForTabs,

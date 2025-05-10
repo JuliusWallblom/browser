@@ -25,10 +25,10 @@ export default function SidebarNavItem({
 			type="button"
 			onClick={onClick}
 			disabled={disabled}
-			className={`font-normal flex items-center justify-start px-2 py-2 h-auto rounded text-sm w-full text-left ${
+			className={`font-normal hover:bg-muted/50 flex items-center justify-start px-2 py-2 h-auto rounded text-sm w-full text-left ${
 				isActive
-					? "bg-muted text-primary"
-					: "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+					? "!bg-muted text-primary"
+					: "text-muted-foreground hover:text-foreground"
 			} ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
 		>
 			<IconComponent size={16} className="flex-shrink-0" />

@@ -244,6 +244,7 @@ export function SettingsPage() {
 								<SidebarNavItem
 									icon={item.icon}
 									label={item.label}
+									badge={item.badge}
 									isActive={activeSection === item.id}
 									onClick={() => setActiveSection(item.id)}
 									disabled={item.disabled}

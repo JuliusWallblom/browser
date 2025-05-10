@@ -8,6 +8,28 @@ import type { Tab } from "../../types/tab";
 import { SidePanel } from "./side-panel";
 import { HorizontalTab } from "./horizontal-tab";
 import { usePreferences } from "@/contexts/preferences-context";
+import {
+	DndContext,
+	closestCenter,
+	KeyboardSensor,
+	PointerSensor,
+	useSensor,
+	useSensors,
+	type DragEndEvent,
+	DragOverlay,
+} from "@dnd-kit/core";
+import {
+	SortableContext,
+	sortableKeyboardCoordinates,
+	verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
+
+// Define the drop animation configuration
+const dropAnimationConfig = {
+	duration: 250, // Standard duration
+	easing: "ease", // Standard, non-bouncy easing
+};
 
 export default function StreamsTab() {
 	const { isLeftPanelOpen, setLeftPanelOpen } = usePanels();
@@ -18,12 +40,49 @@ export default function StreamsTab() {
 		setActiveTab,
 		previewImages,
 		captureAndStoreTabPreview,
+		reorderTabs,
+		orderedTabIds,
 	} = useTabs();
 	const { previewTabs, tabLayout } = usePreferences();
+
+	const [activeDraggedTab, setActiveDraggedTab] = useState<Tab | null>(null);
 
 	const [hasScrollbar, setHasScrollbar] = useState(false);
 	const scrollAreaRef = useRef<HTMLDivElement>(null);
 	const contentRef = useRef<HTMLDivElement>(null);
+
+	const sensors = useSensors(
+		useSensor(PointerSensor, {
+			activationConstraint: {
+				distance: 5,
+			},
+		}),
+		useSensor(KeyboardSensor, {
+			coordinateGetter: sortableKeyboardCoordinates,
+		}),
+	);
+
+	const handleDragStart = useCallback(
+		(event: DragEndEvent) => {
+			const { active } = event;
+			const tab = tabs.find((t) => t.id === active.id);
+			if (tab) {
+				setActiveDraggedTab(tab);
+			}
+		},
+		[tabs],
+	);
+
+	const handleDragEnd = useCallback(
+		(event: DragEndEvent) => {
+			const { active, over } = event;
+			if (over && active.id !== over.id) {
+				reorderTabs(active.id as string, over.id as string);
+			}
+			setActiveDraggedTab(null);
+		},
+		[reorderTabs],
+	);
 
 	const checkScrollbar = useCallback(() => {
 		const content = contentRef.current;
@@ -121,37 +180,74 @@ export default function StreamsTab() {
 			onClose={() => setLeftPanelOpen(false)}
 			position="left"
 		>
-			<ScrollArea ref={scrollAreaRef} className="h-full w-full pl-[2px]">
-				<div
-					ref={contentRef}
-					className={cn(
-						"space-y-1 w-full pb-[6px] pt-[6px] px-1 min-w-0",
-						hasScrollbar ? "pr-3" : "pr-[5px]",
-					)}
-				>
-					{tabs.map((tab: Tab) => (
+			<DndContext
+				sensors={sensors}
+				collisionDetection={closestCenter}
+				onDragStart={handleDragStart}
+				onDragEnd={handleDragEnd}
+				modifiers={[restrictToVerticalAxis]}
+			>
+				<ScrollArea ref={scrollAreaRef} className="h-full w-full pl-[2px]">
+					<SortableContext
+						items={orderedTabIds}
+						strategy={verticalListSortingStrategy}
+					>
+						<div
+							ref={contentRef}
+							className={cn(
+								"space-y-1 w-full pb-[6px] pt-[6px] px-1 min-w-0",
+								hasScrollbar ? "pr-3" : "pr-[5px]",
+							)}
+						>
+							{orderedTabIds.map((tabId) => {
+								const tab = tabs.find((t) => t.id === tabId);
+								if (!tab) return null;
+								return (
+									<HorizontalTab
+										key={tab.id}
+										tab={tab}
+										isActive={activeTabId === tab.id}
+										onSelect={setActiveTab}
+										onClose={(tabIdToClose) => {
+											if (orderedTabIds.length === 1) {
+												window.electron.ipcRenderer.sendMessage("close-window");
+											} else {
+												removeTab(tabIdToClose);
+											}
+										}}
+										previewEnabled={previewTabs}
+										closeButtonVisibility="onHoverOrActive"
+										onHover={captureAndStoreTabPreview}
+										previewImage={previewImages[tab.id]}
+										previewCardSide="right"
+										variant="streamItem"
+										blockAllHovers={!!activeDraggedTab}
+									/>
+								);
+							})}
+						</div>
+					</SortableContext>
+				</ScrollArea>
+				<DragOverlay dropAnimation={dropAnimationConfig}>
+					{activeDraggedTab ? (
 						<HorizontalTab
-							key={tab.id}
-							tab={tab}
-							isActive={activeTabId === tab.id}
-							onSelect={setActiveTab}
-							onClose={(tabIdToClose) => {
-								if (tabs.length === 1) {
-									window.electron.ipcRenderer.sendMessage("close-window");
-								} else {
-									removeTab(tabIdToClose);
-								}
-							}}
+							key={activeDraggedTab.id}
+							tab={activeDraggedTab}
+							isActive={activeDraggedTab.id === activeTabId}
+							onSelect={() => {}}
+							onClose={() => {}}
 							previewEnabled={previewTabs}
 							closeButtonVisibility="onHoverOrActive"
-							onHover={captureAndStoreTabPreview}
-							previewImage={previewImages[tab.id]}
+							onHover={() => {}}
+							previewImage={previewImages[activeDraggedTab.id]}
 							previewCardSide="right"
 							variant="streamItem"
+							isOverlayInstance={true}
+							blockAllHovers={!!activeDraggedTab}
 						/>
-					))}
-				</div>
-			</ScrollArea>
+					) : null}
+				</DragOverlay>
+			</DndContext>
 		</SidePanel>
 	);
 }
